@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html manifest="active.appcache">
+<head>
+	<title>Image Cropper</title>
+	<script src="http://code.jquery.com/jquery.js"></script>
+	<script>
+	var readData = function() {
+		return JSON.parse(window.localStorage["crop-data"] || "{}");
+	};
+
+	var writeData = function(data) {
+		window.localStorage["crop-data"] = JSON.stringify(data);
+	};
+
+	var allFiles = [];
+
+	var start = function() {
+		var data = readData();
+
+		console.log(data);
+	};
+
+	$.get("images.txt", function(files) {
+		allFiles = files.split(/\n/);
+		start();
+	});
+	</script>
+</head>
+<body>
+	<canvas id="canvas" width="300"></canvas>
+</body>
+</html>
