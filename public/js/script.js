@@ -211,7 +211,11 @@ var loadImage = function() {
     document.body.appendChild(img);
 };
 
-$.get("/public/data/images.txt", function(files) {
+$.get("public/data/images.txt", function(files) {
 	allFiles = files.trim().split(/\n/);
 	start();
+});
+
+$("html").on("touchstart", function(e) {
+    e.preventDefault();
 });

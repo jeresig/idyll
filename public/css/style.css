@@ -10,4 +10,11 @@ button#done {
     margin-left: -125px;
     font-size: 40px;
     display: none;
+    padding: 0;
+    margin: 0;
+    line-height: 1em;
+}
+
+img {
+    display: none;
 }
