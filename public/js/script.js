@@ -47,11 +47,21 @@ var drawPoints = function() {
     drawImage();
 
     if (points.length === 2) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+        var top = Math.min(points[0].y, points[1].y);
+        var right = Math.max(points[0].x, points[1].x);
+        var bottom = Math.max(points[0].y, points[1].y);
+        var left = Math.min(points[0].x, points[1].x);
+        ctx.fillRect(0, 0, width, top);
+        ctx.fillRect(right, top, width - right, bottom - top);
+        ctx.fillRect(0, bottom, width, height - bottom);
+        ctx.fillRect(0, top, left, bottom - top);
+
         ctx.beginPath();
         ctx.lineWidth = "3";
+        ctx.setLineDash([5]);
         ctx.strokeStyle = "rgb(0, 0, 0)";
-        ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
-        ctx.rect(points[0].x, points[0].y,
+        ctx.strokeRect(points[0].x, points[0].y,
             points[1].x - points[0].x, points[1].y - points[0].y);
         ctx.stroke();
         ctx.fill();
