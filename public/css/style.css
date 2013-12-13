@@ -4,15 +4,14 @@ html, body {
 }
 
 button#done {
-    width: 250px;
+    -webkit-appearance: none;
     position: fixed;
+    left: 0px;
     bottom: 0px;
-    margin-left: -125px;
-    font-size: 40px;
-    display: none;
-    padding: 0;
-    margin: 0;
-    line-height: 1em;
+    font-size: 15px;
+    line-height: 40px;
+    background: #FFF;
+    border: none;
 }
 
 img {

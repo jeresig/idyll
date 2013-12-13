@@ -60,10 +60,6 @@ var drawPoints = function() {
         ctx.fillStyle = "rgb(255, 0, 0)";
         ctx.fillRect(point.x - 5, point.y - 5, 10, 10);
     });
-
-    if (points.length === 2) {
-        $("#done").show().css("left", width / 2);
-    }
 };
 
 var dist = function(a, b) {
@@ -87,6 +83,15 @@ var updateClosestPoint = function(newPoint) {
 };
 
 var computeSlice = function() {
+    if (points.length < 2) {
+        return {
+            x: 0,
+            y: 0,
+            w: img.width,
+            h: img.height
+        };
+    }
+
     var a = {x: points[0].x, y: points[0].y};
     var b = {x: points[1].x, y: points[1].y};
 
@@ -176,8 +181,6 @@ var getAspect = function(w, h) {
 };
 
 var resetImage = function() {
-    $("#done").hide();
-
     ctx.clearRect(0, 0, width, height);
 
     points = [];
