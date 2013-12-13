@@ -1,1 +1,2 @@
-offline.appcache
+public/offline.appcache
+node_modules

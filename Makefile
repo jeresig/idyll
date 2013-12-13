@@ -1,11 +1,15 @@
 SHELL := /bin/bash
 
+APPCACHE=public/offline.appcache
+IMAGES=public/images/*
+IMAGELIST=public/data/images.txt
+STATIC=public/*/*
+
 all:
-	ls public/images/* > public/data/images.txt
-	echo "index.html" > .tmpfiles
-	ls public/*/* >> .tmpfiles
-	echo "CACHE MANIFEST" > offline.appcache
-	echo -n "# " >> offline.appcache
-	cat .tmpfiles | grep -v jpg | xargs cat - | md5sum >> offline.appcache
-	cat .tmpfiles >> offline.appcache
+	ls $(IMAGES) > $(IMAGELIST)
+	ls $(STATIC) >> .tmpfiles
+	echo "CACHE MANIFEST" > $(APPCACHE)
+	echo -n "# " >> $(APPCACHE)
+	cat .tmpfiles | grep -v jpg | xargs cat - | md5 >> $(APPCACHE)
+	cat .tmpfiles >> $(APPCACHE)
 	rm .tmpfiles
