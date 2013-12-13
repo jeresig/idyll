@@ -19,6 +19,8 @@ var points = [];
 var curFile;
 
 var drawImage = function() {
+    ctx.clearRect(0, 0, width, height);
+
     ctx.save();
     if (rotated) {
         ctx.translate(width, 0);
@@ -129,7 +131,7 @@ var start = function() {
     document.body.appendChild(canvas);
 
     width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
+    height = canvas.height = window.innerHeight - 40;
     aspect = getAspect(width, height);
 
     var down = false;

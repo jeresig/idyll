@@ -3,15 +3,24 @@ html, body {
     padding: 0;
 }
 
-button#done {
-    -webkit-appearance: none;
+.toolbar {
     position: fixed;
     left: 0px;
     bottom: 0px;
+    width: 100%;
+    overflow: auto;
+}
+
+button#done {
+    -webkit-appearance: none;
     font-size: 15px;
     line-height: 40px;
     background: #FFF;
     border: none;
+}
+
+.pull-right {
+    float: right;
 }
 
 img {
