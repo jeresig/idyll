@@ -1,0 +1,13 @@
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
+button#done {
+    width: 250px;
+    position: fixed;
+    bottom: 0px;
+    margin-left: -125px;
+    font-size: 40px;
+    display: none;
+}
