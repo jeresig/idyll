@@ -1,10 +1,26 @@
 var http = require("http");
 var path = require("path");
+var fs = require("fs");
 
 var express = require("express");
 var swig = require("swig");
+var mongoose = require("mongoose");
 
+var env = process.env.NODE_ENV || "development";
+
+var config = require("./config/config")[env];
 var routes = require("./routes");
+
+mongoose.connect(config.db);
+
+// Load models
+var modelsDir = __dirname + "/models";
+
+fs.readdirSync(modelsDir).forEach(function (file) {
+    if (~file.indexOf(".js")) {
+        require(modelsDir + "/" + file);
+    }
+});
 
 var app = express();
 
@@ -29,6 +45,4 @@ app.configure("development", function() {
 
 app.get("/", routes.index);
 
-http.createServer(app).listen(app.get("port"), function() {
-    console.log("Express server listening on port " + app.get("port"));
-});
+app.listen(app.get("port"));
