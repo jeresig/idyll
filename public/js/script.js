@@ -226,7 +226,7 @@ var loadImage = function() {
     document.body.appendChild(img);
 };
 
-$.get("public/data/images.txt", function(files) {
+$.get("/data/images.txt", function(files) {
 	allFiles = files.trim().split(/\n/);
 	start();
 });

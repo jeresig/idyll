@@ -1,0 +1,33 @@
+{
+  "name": "offline-crop",
+  "version": "0.0.0",
+  "description": "An application for cropping images offline.",
+  "main": "app.js",
+  "dependencies": {
+    "express": "~3.0.3",
+    "swig": "~1.2.2"
+  },
+  "devDependencies": {
+    "nodemon": "~0.7.10"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/jeresig/offline-crop.git"
+  },
+  "keywords": [
+    "mobile",
+    "offline",
+    "image",
+    "images",
+    "crop",
+    "cropping"
+  ],
+  "author": "John Resig <jeresig@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jeresig/offline-crop/issues"
+  }
+}
