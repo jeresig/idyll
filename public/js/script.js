@@ -1,22 +1,18 @@
-var readData = function() {
-	return JSON.parse(window.localStorage["crop-data"] || "{}");
-};
-
-var writeData = function(data) {
-	window.localStorage["crop-data"] = JSON.stringify(data);
-};
-
 var allFiles = [];
 var width;
 var height;
 var ctx;
 var previewCtx;
-var done;
 var aspect;
 var img;
 var rotated;
 var points = [];
 var curFile;
+var username;
+var userKey = "username";
+var storageKey = "crop-data";
+var attemptingSave = false;
+var startTime;
 
 var drawImage = function() {
     ctx.clearRect(0, 0, width, height);
@@ -99,8 +95,8 @@ var computeSlice = function() {
         return {
             x: 0,
             y: 0,
-            w: img.width,
-            h: img.height
+            width: img.width,
+            height: img.height
         };
     }
 
@@ -129,13 +125,18 @@ var computeSlice = function() {
     return {
         x: Math.min.apply(Math, x),
         y: Math.min.apply(Math, y),
-        w: Math.max.apply(Math, x) - Math.min.apply(Math, x),
-        h: Math.max.apply(Math, y) - Math.min.apply(Math, y)
+        width: Math.max.apply(Math, x) - Math.min.apply(Math, x),
+        height: Math.max.apply(Math, y) - Math.min.apply(Math, y)
     };
 };
 
 var start = function() {
-	done = readData();
+    username = window.localStorage[userKey];
+
+    if (!username) {
+        username = prompt("Enter Your Name");
+        window.localStorage[userKey] = username;
+    }
 
     var canvas = document.createElement("canvas");
     document.body.appendChild(canvas);
@@ -176,8 +177,7 @@ var start = function() {
     });
 
     $("#done").on("click", function() {
-        done[curFile] = computeSlice();
-        writeData(done);
+        writeData(curFile, computeSlice());
 
         loadImage();
     });
@@ -186,6 +186,8 @@ var start = function() {
     previewCtx = document.getElementById("preview").getContext("2d");
 
     loadImage();
+
+    setInterval(attemptSave, 5000);
 };
 
 var getAspect = function(w, h) {
@@ -204,6 +206,8 @@ var resetImage = function() {
 var loadImage = function() {
     resetImage();
 
+    var done = readData();
+
     for (var i = 0; i < allFiles.length; i++) {
         if (!(allFiles[i] in done)) {
             curFile = allFiles[i];
@@ -220,11 +224,97 @@ var loadImage = function() {
     img.src = curFile;
     img.onload = function() {
         rotated = getAspect(img.width, img.height) !== aspect;
+        startTime = (new Date).getTime();
 
         drawImage();
     };
     document.body.appendChild(img);
 };
+
+var attemptSave = function() {
+    if (attemptingSave) {
+        return;
+    }
+
+    $("#save-status").text(window.navigator.onLine ?
+        "Online." : "Offline.");
+
+    if (!window.navigator.onLine) {
+        return;
+    }
+
+    var data = readData();
+    var toSave = {};
+    var hasData = false;
+
+    for (var prop in data) {
+        if (!data[prop].saved) {
+            toSave[prop] = data[prop];
+            hasData = true;
+        }
+    }
+
+    if (!hasData) {
+        return;
+    }
+
+    attemptingSave = true;
+
+    $("#save-status").text("Saving...");
+
+    $.ajax({
+        type: "POST",
+        url: "/selections",
+        contentType: "application/json",
+        data: JSON.stringify({
+            user: username,
+            selections: toSave
+        }),
+        timeout: 8000,
+
+        success: function() {
+            attemptingSave = false;
+
+            var curData = readData();
+
+            // Remove the saved properties from the cache
+            for (var file in data) {
+                curData[file].saved = true;
+            }
+
+            saveData(curData);
+
+            $("#save-status").text("Saved!");
+        },
+
+        error: function() {
+            attemptingSave = false;
+
+            $("#save-status").text("Error Saving.");
+        }
+    });
+};
+
+var readData = function() {
+	return JSON.parse(window.localStorage[storageKey] || "{}");
+};
+
+var writeData = function(file, selection) {
+    var data = readData();
+    data[file] = {
+        selections: [selection],
+        started: startTime,
+        completed: (new Date).getTime()
+    };
+
+	saveData(data);
+};
+
+var saveData = function(data) {
+    window.localStorage[storageKey] = JSON.stringify(data);
+};
+
+$(window).on("online", attemptSave);
 
 $.get("/data/images.txt", function(files) {
 	allFiles = files.trim().split(/\n/);

@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 PUBLIC=public
 APPCACHE=offline.appcache
-IMAGES=images/*
+IMAGES=images/*/*/*.jpg
 IMAGELIST=data/images.txt
 STATIC=js/* css/* data/*
 
@@ -16,7 +16,7 @@ all:
 	$(call chdir,$(PUBLIC))
 	ls $(IMAGES) > $(IMAGELIST)
 	ls $(STATIC) > .tmpfiles
-	ls $(IMAGES) >> .tmpfiles
+	ls $(IMAGES) | head -200 >> .tmpfiles
 	echo "CACHE MANIFEST" > $(APPCACHE)
 	echo -n "# " >> $(APPCACHE)
 	cat .tmpfiles | grep -v jpg | xargs cat - | md5 >> $(APPCACHE)

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html><!--  manifest="active.appcache" -->
+<html{% if offline %} manifest="offline.appcache"{% endif %}>
 <head>
     <title>Image Cropper</title>
     <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -12,6 +12,10 @@
 </head>
 <body>
     <div class="toolbar">
+        <div class="status pull-left">
+            <div id="sync-status"></div>
+            <div id="save-status"></div>
+        </div>
         <canvas id="preview" width="40" height="40"></canvas>
         <button id="done" class="pull-right">Done &raquo;</button>
     </div>

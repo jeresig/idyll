@@ -44,5 +44,6 @@ app.configure("development", function() {
 });
 
 app.get("/", routes.index);
+app.post("/selections", routes.saveSelections);
 
 app.listen(app.get("port"));
