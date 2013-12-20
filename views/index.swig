@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html{% if offline %} manifest="offline.appcache"{% endif %}>
+<html{% if offline %} manifest="/offline.appcache"{% endif %}>
 <head>
     <title>Image Cropper</title>
     <meta name="apple-mobile-web-app-capable" content="yes"/>

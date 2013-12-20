@@ -1,8 +1,26 @@
 var async = require("async");
 var mongoose = require("mongoose");
+var appcache = require("appcache");
+
+// Load Appcache
+var baseAppCache = appcache
+    .create({cwd: __dirname + "/public"})
+    .addCache(["js/*", "css/*"])
+    .addNetwork(["/", "/selections"]);
 
 exports.index = function(req, res) {
     res.render('index');
+};
+
+exports.mobile = function(req, res) {
+    res.render('index', {offline: true});
+};
+
+exports.appCache = function(req, res) {
+    baseAppCache
+        .clone()
+        .addCache(["images/**/*.jpg"])
+        .pipe(res);
 };
 
 var getUser = function(name, callback) {

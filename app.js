@@ -44,6 +44,8 @@ app.configure("development", function() {
 });
 
 app.get("/", routes.index);
+app.get("/mobile", routes.mobile);
 app.post("/selections", routes.saveSelections);
+app.get("/offline.appcache", routes.appCache);
 
 app.listen(app.get("port"));

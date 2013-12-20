@@ -10,7 +10,8 @@
     "gm": "~1.14.1",
     "async": "~0.2.9",
     "imageinfo": "~1.0.4",
-    "glob": "~3.2.7"
+    "glob": "~3.2.7",
+    "appcache": "jeresig/node-appcache"
   },
   "devDependencies": {
     "nodemon": "~0.7.10"
