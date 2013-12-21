@@ -11,7 +11,7 @@ var cacheSize = 200;
 // Load Appcache
 var baseAppCache = appcache
     .create({cwd: __dirname + "/public"})
-    .addCache(["js/*", "css/*"])
+    .addCache(["js/*", "css/*", "/queue"])
     .addNetwork(["/", "/selections"]);
 
 exports.index = function(req, res) {
@@ -22,24 +22,78 @@ exports.mobile = function(req, res) {
     res.render('index', {offline: true});
 };
 
+var getAndAssignImages = function(user, callback) {
+    Image.find({assigned: user}, function(err, images) {
+        if (err) {
+            return callback(err);
+        }
+
+        var num = cacheSize - images.length;
+
+        if (num <= 0) {
+            return callback(null, images);
+        }
+
+        Image.where("assigned").size(0)
+            .where("selections").size(0)
+            .limit(num)
+            .exec(function(err, additional) {
+                if (err) {
+                    return callbac(err);
+                }
+
+                additional.forEach(function(image) {
+                    image.assigned.push(user);
+                    image.save();
+                    images.push(image);
+                });
+
+                // If nothing left look for things that are
+                // incomplete and we're not assigned to.
+                num = cacheSize - images.length;
+
+                if (num <= 0) {
+                    return callback(null, images);
+                }
+
+                Image.where("assigned").ne(user)
+                    .where("selections").size(0)
+                    .limit(num)
+                    .exec(function(err, additional) {
+                        additional.forEach(function(image) {
+                            image.assigned.push(user);
+                            image.save();
+                            images.push(image);
+                        });
+                        
+                        callback(null, images);
+                    });
+            });
+    });
+};
+
+exports.imageQueue = function(req, res) {
+    getUser(req.query.name || "John Resig", function(err, user) {
+        getAndAssignImages(user, function(err, images) {
+            res.send(200, {
+                images: images.map(function(image) {
+                    return image.scaled;
+                })
+            });
+        });
+    });
+};
+
 exports.appCache = function(req, res) {
     var cache = baseAppCache.clone();
 
     getUser(req.query.name || "John Resig", function(err, user) {
-        Image.find({assigned: user._id}, function(err, images) {
-            var num = cacheSize - images.length;
-            Image.where("assigned").size(0).limit(num)
-                .exec(function(err, additional) {
-                    additional.forEach(function(image) {
-                        image.assigned.push(user._id);
-                        image.save();
-                        images.push(image);
-                        cache.addCache(
-                            "images/scaled/" + image.scaled.file);
-                    });
+        getAndAssignImages(user, function(err, images) {
+            images.forEach(function(image) {
+                cache.addCache("images/scaled/" + image.scaled.file);
+            });
 
-                    cache.pipe(res);
-                });
+            cache.pipe(res);
         });
     });
 };
