@@ -9,7 +9,6 @@ var mongoose = require("mongoose");
 var env = process.env.NODE_ENV || "development";
 
 var config = require("./config/config")[env];
-var routes = require("./routes");
 
 mongoose.connect(config.db);
 
@@ -21,6 +20,8 @@ fs.readdirSync(modelsDir).forEach(function (file) {
         require(modelsDir + "/" + file);
     }
 });
+
+var routes = require("./routes");
 
 var app = express();
 

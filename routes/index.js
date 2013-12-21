@@ -2,6 +2,12 @@ var async = require("async");
 var mongoose = require("mongoose");
 var appcache = require("appcache");
 
+var User = mongoose.model("User");
+var Image = mongoose.model("Image");
+var Selection = mongoose.model("Selection");
+
+var cacheSize = 200;
+
 // Load Appcache
 var baseAppCache = appcache
     .create({cwd: __dirname + "/public"})
@@ -17,15 +23,28 @@ exports.mobile = function(req, res) {
 };
 
 exports.appCache = function(req, res) {
-    baseAppCache
-        .clone()
-        .addCache(["images/**/*.jpg"])
-        .pipe(res);
+    var cache = baseAppCache.clone();
+
+    getUser(req.query.name || "John Resig", function(err, user) {
+        Image.find({assigned: user._id}, function(err, images) {
+            var num = cacheSize - images.length;
+            Image.where("assigned").size(0).limit(num)
+                .exec(function(err, additional) {
+                    additional.forEach(function(image) {
+                        image.assigned.push(user._id);
+                        image.save();
+                        images.push(image);
+                        cache.addCache(
+                            "images/scaled/" + image.scaled.file);
+                    });
+
+                    cache.pipe(res);
+                });
+        });
+    });
 };
 
 var getUser = function(name, callback) {
-    var User = mongoose.model("User");
-
     User.findOne({name: name}, function(err, user) {
         if (!err && user) {
             callback(null, user);
@@ -37,8 +56,6 @@ var getUser = function(name, callback) {
 
 exports.saveSelections = function(req, res) {
     var data = req.body;
-    var Image = mongoose.model("Image");
-    var Selection = mongoose.model("Selection");
 
     getUser(data.user, function(err, user) {
         var files = Object.keys(data.selections);

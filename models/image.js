@@ -12,7 +12,8 @@ var ImageSchema = new Schema({
     original: File,
     scaled: File,
     type: {type: String, "default": "crop"},
-    selections: [{type: ObjectId, ref: "Selection"}]
+    selections: [{type: ObjectId, ref: "Selection"}],
+    assigned: [{type: ObjectId, ref: "User"}]
 });
 
 mongoose.model("Image", ImageSchema);
