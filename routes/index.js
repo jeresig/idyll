@@ -22,7 +22,9 @@ exports.mobile = function(req, res) {
     res.render('index', {offline: true});
 };
 
-var getAndAssignImages = function(user, callback) {
+var getAndAssignImages = function(req, callback) {
+    var user = req.user;
+
     Image.find({assigned: user}, function(err, images) {
         if (err) {
             return callback(err);
@@ -73,13 +75,11 @@ var getAndAssignImages = function(user, callback) {
 };
 
 exports.imageQueue = function(req, res) {
-    getUser(req.query.name || "John Resig", function(err, user) {
-        getAndAssignImages(user, function(err, images) {
-            res.send(200, {
-                images: images.map(function(image) {
-                    return image.scaled;
-                })
-            });
+    getAndAssignImages(req, function(err, images) {
+        res.send(200, {
+            images: images.map(function(image) {
+                return image.scaled;
+            })
         });
     });
 };
@@ -87,53 +87,40 @@ exports.imageQueue = function(req, res) {
 exports.appCache = function(req, res) {
     var cache = baseAppCache.clone();
 
-    getUser(req.query.name || "John Resig", function(err, user) {
-        getAndAssignImages(user, function(err, images) {
-            images.forEach(function(image) {
-                cache.addCache("images/scaled/" + image.scaled.file);
-            });
-
-            cache.pipe(res);
+    getAndAssignImages(req, function(err, images) {
+        images.forEach(function(image) {
+            cache.addCache("images/scaled/" + image.scaled.file);
         });
-    });
-};
 
-var getUser = function(name, callback) {
-    User.findOne({name: name}, function(err, user) {
-        if (!err && user) {
-            callback(null, user);
-        } else {
-            User.create({name: name}, callback);
-        }
+        cache.pipe(res);
     });
 };
 
 exports.saveSelections = function(req, res) {
     var data = req.body;
 
-    getUser(data.user, function(err, user) {
-        var files = Object.keys(data.selections);
+    var user = req.profile;
+    var files = Object.keys(data.selections);
 
-        async.eachLimit(files, 5, function(file, callback) {
-            // TODO: Make this more flexible.
-            var fileName = file.replace("images/scaled/", "");
+    async.eachLimit(files, 5, function(file, callback) {
+        // TODO: Make this more flexible.
+        var fileName = file.replace("images/scaled/", "");
 
-            Image.findOne({"scaled.file": fileName}, function(err, image) {
-                if (err || !image) {
-                    return callback(err);
-                }
-
-                var selectionData = data.selections[file];
-                selectionData.user = user;
-                selectionData.image = image;
-                Selection.create(selectionData, callback);
-            });
-        }, function(err, images) {
-            if (err) {
-                res.send(500, "Error saving selections.");
-            } else {
-                res.send(200, "Selections saved successfully.");
+        Image.findOne({"scaled.file": fileName}, function(err, image) {
+            if (err || !image) {
+                return callback(err);
             }
+
+            var selectionData = data.selections[file];
+            selectionData.user = user;
+            selectionData.image = image;
+            Selection.create(selectionData, callback);
         });
+    }, function(err, images) {
+        if (err) {
+            res.send(500, "Error saving selections.");
+        } else {
+            res.send(200, "Selections saved successfully.");
+        }
     });
 };
