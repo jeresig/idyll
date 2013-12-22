@@ -30,10 +30,7 @@ module.exports = function (passport, config) {
             passwordField: "password"
         },
         function(email, password, done) {
-            var options = {
-                criteria: { email: email }
-            };
-            User.load(options, function (err, user) {
+            User.findOne({ email: email }).exec(function(err, user) {
                 if (err) {
                     return done(err);
                 }
