@@ -11,8 +11,8 @@ var cacheSize = 200;
 // Load Appcache
 var baseAppCache = appcache
     .create({cwd: __dirname + "/public"})
-    .addCache(["js/*", "css/*", "/queue"])
-    .addNetwork(["/", "/selections"]);
+    .addCache(["js/*", "css/*", "/mobile"])
+    .addNetwork(["/", "/selections", "/queue"]);
 
 exports.index = function(req, res) {
     res.render('index');
@@ -98,8 +98,7 @@ exports.appCache = function(req, res) {
 
 exports.saveSelections = function(req, res) {
     var data = req.body;
-
-    var user = req.profile;
+    var user = req.user;
     var files = Object.keys(data.selections);
 
     async.eachLimit(files, 5, function(file, callback) {
@@ -111,16 +110,23 @@ exports.saveSelections = function(req, res) {
                 return callback(err);
             }
 
-            var selectionData = data.selections[file];
-            selectionData.user = user;
-            selectionData.image = image;
-            Selection.create(selectionData, callback);
+            var selection = new Selection(data.selections[file]);
+            selection.user = user;
+            selection.image = image;
+            selection.save(function(err) {
+                // The image is no longer assigned to the user.
+                // TODO: If we want a minimum number of selections before
+                // closing we should change this logic.
+                image.assigned = [];
+                image.selections.push(selection);
+                image.save(callback);
+            });
         });
     }, function(err, images) {
         if (err) {
-            res.send(500, "Error saving selections.");
+            res.send(500, {error: "Error saving selections."});
         } else {
-            res.send(200, "Selections saved successfully.");
+            exports.imageQueue(req, res);
         }
     });
 };

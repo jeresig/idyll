@@ -10,7 +10,7 @@ var config = require(__dirname + "/../config/config")[env];
 
 mongoose.connect(config.db);
 
-require(__dirname + "/../models/image");
+require(__dirname + "/../app/models/image");
 var Image = mongoose.model("Image");
 
 var scaledPath = "public/images/scaled/";
