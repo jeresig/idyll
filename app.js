@@ -12,9 +12,9 @@ var flash = require("connect-flash");
 var env = process.env.NODE_ENV || "development";
 var pkg = require("./package");
 var config = require("./config/config")[env];
+var mongoURL = process.env.MONGO_URL || config.db;
 
-console.log("Connecting to: ", process.env.MONGO_URL);
-mongoose.connect(process.env.MONGO_URL || config.db);
+mongoose.connect(mongoURL);
 
 // Load models
 var modelsDir = __dirname + "/app/models";
@@ -49,8 +49,8 @@ app.configure(function() {
     app.use(express.session({
         secret: pkg.name,
         store: new mongoStore({
-            url: config.db,
-            collection : "sessions"
+            url: mongoURL,
+            collection: "sessions"
         })
     }));
 
