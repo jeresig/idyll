@@ -13,6 +13,7 @@ var env = process.env.NODE_ENV || "development";
 var pkg = require("./package");
 var config = require("./config/config")[env];
 
+console.log("Connecting to: ", process.env.MONGO_URL);
 mongoose.connect(process.env.MONGO_URL || config.db);
 
 // Load models
