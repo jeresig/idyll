@@ -10,11 +10,10 @@ var mongoStore = require("connect-mongo")(express);
 var flash = require("connect-flash");
 
 var env = process.env.NODE_ENV || "development";
-
 var pkg = require("./package");
 var config = require("./config/config")[env];
 
-mongoose.connect(config.db);
+mongoose.connect(process.env.MONGO_URL || config.db);
 
 // Load models
 var modelsDir = __dirname + "/app/models";
