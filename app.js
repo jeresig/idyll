@@ -63,6 +63,7 @@ app.configure(function() {
 
     // expose pkg and node env to views
     app.use(function (req, res, next) {
+        console.log(req.url);
         res.locals.pkg = pkg
         res.locals.env = env
         next();
