@@ -108,3 +108,5 @@ app.get("/queue", requiresLogin, routes.imageQueue);
 app.get("/offline.appcache", requiresLogin, routes.appCache);
 
 app.listen(app.get("port"));
+
+console.log("Connected on port:", port);
