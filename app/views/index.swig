@@ -1,16 +1,14 @@
-<!DOCTYPE html>
-<html{% if offline %} manifest="/offline.appcache"{% endif %}>
-<head>
-    <title>Image Cropper</title>
-    <meta name="apple-mobile-web-app-capable" content="yes"/>
-    <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
-    <meta name="viewport" content="target-densitydpi=device-dpi, initial-scale=1.0, user-scalable=no"/>
-    <link rel="stylesheet" href="/css/style.css"/>
-    <script src="/js/jquery.js"></script>
-    <script src="/js/jquery.mobile.vmouse.js"></script>
-    <script src="/js/script.js"></script>
-</head>
-<body>
+{% extends "./layouts/default.swig" %}
+
+{% block title %}Image Cropper{% endblock %}
+
+{% block scripts %}
+<script src="/bower/jquery/jquery.js"></script>
+<script src="/js/jquery.mobile.vmouse.js"></script>
+<script src="/js/script.js"></script>
+{% endblock %}
+
+{% block content %}
     <div class="toolbar">
         <div class="status pull-left">
             <div id="sync-status"></div>
@@ -19,5 +17,4 @@
         <canvas id="preview" width="40" height="40"></canvas>
         <button id="done" class="pull-right">Done &raquo;</button>
     </div>
-</body>
-</html>
+{% endblock %}

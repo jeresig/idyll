@@ -1,4 +1,9 @@
+{% extends "../layouts/default.swig" %}
+
+{% block title %}Login{% endblock %}
+
 {% block content %}
+<p>Don't have an account? <a href="/signup">Signup for an account</a>.</p>
 <form action="/users/session" method="post">
 <div>
     <label for="email">Email</label>

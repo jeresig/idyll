@@ -1,2 +1,3 @@
 public/offline.appcache
 node_modules
+bower_components

@@ -434,14 +434,14 @@ FileQueue.prototype = {
             timeout: 8000,
 
             success: function(data) {
-                this.loading = false;
-                this.queue = data.images;
-                this.saveToCache();
-                callback(null, this.queue);
+                self.loading = false;
+                self.queue = data.images;
+                self.saveToCache();
+                callback(null, self.queue);
             },
 
             error: function() {
-                this.loading = false;
+                self.loading = false;
                 callback({error: "Error retreiving file queue."}, self.queue);
             }
         });

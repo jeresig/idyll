@@ -102,7 +102,7 @@ app.get("/users/:userId", users.show);
 
 app.param("userId", users.user);
 
-app.get("/", routes.index);
+app.get("/", requiresLogin, routes.index);
 app.get("/mobile", routes.mobile);
 app.post("/selections", requiresLogin, routes.saveSelections);
 app.get("/queue", requiresLogin, routes.imageQueue);
