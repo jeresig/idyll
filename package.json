@@ -22,7 +22,8 @@
     "nodemon": "~0.7.10"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall" "./node_modules/bower/bin/bower install"
   },
   "repository": {
     "type": "git",
