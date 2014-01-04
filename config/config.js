@@ -12,7 +12,6 @@ module.exports = {
             port: 3000,
         },
 
-        db: "mongodb://localhost/selection",
-        imageRoot: "/media/images"
+        db: "mongodb://localhost/selection"
     }
 };

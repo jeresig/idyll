@@ -16,17 +16,6 @@ var Image = mongoose.model("Image");
 console.log("Loading images into DB...");
 
 var publicImages = "public/images";
-
-if (config.imageRoot) {
-    var dest = path.resolve(__dirname, "..", publicImages);
-
-    console.log("Building symlink...", config.imageRoot, dest);
-
-    fs.symlinkSync(config.imageRoot, dest);
-
-    console.log("Media directory:", glob.sync("/media/*"))
-}
-
 var scaledPath = publicImages + "/scaled/";
 var scaledDir = path.resolve(__dirname, "..", scaledPath);
 var files = glob.sync(scaledDir + "/**/*.jpg");
