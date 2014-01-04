@@ -1,1 +1,1 @@
-web: node app.js
+web: node utils/load-images.js && node app.js
