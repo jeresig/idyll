@@ -12,11 +12,11 @@ var cacheSize = 200;
 var baseAppCache = appcache
     .create({cwd: __dirname + "/../public"})
     .addCache([
-        "bower/jquery/jquery.min.js",
-        "bower/bootstrap/dist/css/bootstrap.min.css",
-        "bower/bootstrap/dist/fonts/*",
-        "js/*",
-        "css/*",
+        "/bower/jquery/jquery.min.js",
+        "/bower/bootstrap/dist/css/bootstrap.min.css",
+        "/bower/bootstrap/dist/fonts/*",
+        "/js/*",
+        "/css/*",
         "/mobile"
     ])
     .addNetwork(["/", "/selections", "/queue"]);
@@ -96,7 +96,7 @@ exports.appCache = function(req, res) {
 
     getAndAssignImages(req, function(err, images) {
         images.forEach(function(image) {
-            cache.addCache("images/scaled/" + image.scaled.file);
+            cache.addCache("/images/scaled/" + image.scaled.file);
         });
 
         cache.pipe(res);
@@ -110,7 +110,7 @@ exports.saveSelections = function(req, res) {
 
     async.eachLimit(files, 5, function(file, callback) {
         // TODO: Make this more flexible.
-        var fileName = file.replace("images/scaled/", "");
+        var fileName = file.replace("/images/scaled/", "");
 
         Image.findOne({"scaled.file": fileName}, function(err, image) {
             if (err || !image) {
