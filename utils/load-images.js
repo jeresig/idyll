@@ -29,6 +29,8 @@ var scaledPath = publicImages + "/scaled/";
 var scaledDir = path.resolve(__dirname, "..", scaledPath);
 var files = glob.sync(scaledDir + "/**/*.jpg");
 
+console.log("# of files found:", files.length);
+
 async.eachLimit(files, 5, function(file, callback) {
     var fileName = file.replace(scaledDir + "/", "");
 
