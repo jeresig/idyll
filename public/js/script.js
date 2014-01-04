@@ -1,7 +1,3 @@
-$(document).on("click", function(e) {
-    alert(e.target.nodeName + " " + e.target.id);
-});
-
 $(function() {
     var canvas = document.createElement("canvas");
     document.body.appendChild(canvas);
@@ -60,7 +56,7 @@ $(function() {
         nextImage();
     });
 
-    $("#done").on("click", function() {
+    $("#done").on("vclick", function() {
         fileQueue.markDone();
         selections.finish(selectionCanvas.computeSlice());
         nextImage();
