@@ -7,8 +7,9 @@ var mongoose = require("mongoose");
 
 var env = process.env.NODE_ENV || "development";
 var config = require(__dirname + "/../config/config")[env];
+var mongoURL = process.env.MONGO_URL || config.db;
 
-mongoose.connect(config.db);
+mongoose.connect(mongoURL);
 
 require(__dirname + "/../app/models/image");
 var Image = mongoose.model("Image");
