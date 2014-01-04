@@ -10,15 +10,18 @@ $(function() {
 
     $(selections).on({
         saving: function() {
-            $("#save-status").text("Saving...");
+            $("#save-status").html(
+                "<span class='glyphicon glyphicon-floppy-save'></span> Saving...");
         },
 
         saved: function(e, data) {
-            $("#save-status").text("Saved!");
+            $("#save-status").html(
+                "<span class='glyphicon glyphicon-floppy-saved'></span> Saved!");
         },
 
         error: function() {
-            $("#save-status").text("Error Saving.");
+            $("#save-status").html(
+                "<span class='glyphicon glyphicon-floppy-remove'></span> Error Saving.");
         }
     });
 
@@ -60,8 +63,9 @@ $(function() {
     });
 
     var attemptSave = function() {
-        $("#save-status").text(window.navigator.onLine ?
-            "Online." : "Offline.");
+        $("#online-status").html(window.navigator.onLine ?
+            "<span class='glyphicon glyphicon-ok-sign'></span> Online." :
+            "<span class='glyphicon glyphicon-minus-sign'></span> Offline.");
 
         selections.save();
     };
@@ -371,14 +375,14 @@ Selections.prototype = {
                     delete self.toSave[prop];
                 }
 
-                $(this).trigger("saved", {
+                $(self).trigger("saved", {
                     saved: toSave,
                     result: data
                 });
             },
 
             error: function() {
-                $(this).trigger("error");
+                $(self).trigger("error");
             }
         });
     }

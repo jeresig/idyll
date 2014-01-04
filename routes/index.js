@@ -10,8 +10,15 @@ var cacheSize = 200;
 
 // Load Appcache
 var baseAppCache = appcache
-    .create({cwd: __dirname + "/public"})
-    .addCache(["js/*", "css/*", "/mobile"])
+    .create({cwd: __dirname + "/../public"})
+    .addCache([
+        "bower/jquery/jquery.min.js",
+        "bower/bootstrap/dist/css/bootstrap.min.css",
+        "bower/bootstrap/dist/fonts/*",
+        "js/*",
+        "css/*",
+        "/mobile"
+    ])
     .addNetwork(["/", "/selections", "/queue"]);
 
 exports.index = function(req, res) {
