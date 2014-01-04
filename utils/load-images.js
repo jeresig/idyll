@@ -18,8 +18,11 @@ console.log("Loading images into DB...");
 var publicImages = "public/images";
 
 if (config.imageRoot) {
-    console.log("Building symlink...");
-    fs.symlinkSync(config.imageRoot, publicImages);
+    var dest = path.resolve(__dirname, "..", publicImages);
+
+    console.log("Building symlink...", config.imageRoot, dest);
+
+    fs.symlinkSync(config.imageRoot, dest);
 }
 
 var scaledPath = publicImages + "/scaled/";
