@@ -1,3 +1,7 @@
+$(document).on("click", function(e) {
+    alert(e.target.nodeName + " " + e.target.id);
+});
+
 $(function() {
     var canvas = document.createElement("canvas");
     document.body.appendChild(canvas);
@@ -57,13 +61,9 @@ $(function() {
     });
 
     $("#done").on("click", function() {
-        alert("a");
         fileQueue.markDone();
-        alert("b");
         selections.finish(selectionCanvas.computeSlice());
-        alert("c")
         nextImage();
-        alert("d")
     });
 
     var attemptSave = function() {
