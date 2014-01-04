@@ -1,6 +1,6 @@
 var async = require("async");
 var mongoose = require("mongoose");
-var appcache = require("appcache");
+var appcache = require("appcache-glob");
 
 var User = mongoose.model("User");
 var Image = mongoose.model("Image");
