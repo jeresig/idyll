@@ -23,6 +23,8 @@ if (config.imageRoot) {
     console.log("Building symlink...", config.imageRoot, dest);
 
     fs.symlinkSync(config.imageRoot, dest);
+
+    console.log("Media directory:", glob.sync("/media/*"))
 }
 
 var scaledPath = publicImages + "/scaled/";
