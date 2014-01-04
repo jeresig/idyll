@@ -57,9 +57,13 @@ $(function() {
     });
 
     $("#done").on("click", function() {
+        alert("a");
         fileQueue.markDone();
+        alert("b");
         selections.finish(selectionCanvas.computeSlice());
+        alert("c")
         nextImage();
+        alert("d")
     });
 
     var attemptSave = function() {
