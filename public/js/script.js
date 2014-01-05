@@ -15,6 +15,8 @@ $(function() {
         },
 
         saved: function(e, data) {
+            fileQueue.loadData(data.result.images);
+
             $("#save-status").html(
                 "<span class='glyphicon glyphicon-floppy-saved'></span> Saved!");
         },
@@ -35,6 +37,8 @@ $(function() {
         if (!nextFile) {
             // TODO: Show some sort of error?
             // Get them to go online and re-sync, if offline.
+            $("#sync-status").text("No more files! Reload.");
+            return;
         }
 
         var curFile = nextFile.file;
@@ -432,6 +436,11 @@ FileQueue.prototype = {
         }
     },
 
+    loadData: function(data) {
+        this.queue = data;
+        this.saveToCache();
+    },
+
     getQueue: function(callback) {
         var self = this;
 
@@ -451,8 +460,7 @@ FileQueue.prototype = {
 
             success: function(data) {
                 self.loading = false;
-                self.queue = data.images;
-                self.saveToCache();
+                self.loadData(data.images);
                 callback(null, self.queue);
             },
 
