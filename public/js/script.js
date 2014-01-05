@@ -325,11 +325,11 @@ var Selections = function() {
 
 Selections.prototype = {
     loadCache: function() {
-        return JSON.parse(localStorage[this.cacheKey] || "{}");
+        this.toSave = JSON.parse(localStorage[this.cacheKey] || "{}");
     },
 
     saveCache: function() {
-        localStorage[this.cacheKey] = JSON.stringify(this.queue);
+        localStorage[this.cacheKey] = JSON.stringify(this.toSave);
     },
 
     start: function(file) {
@@ -346,6 +346,7 @@ Selections.prototype = {
 
         this.curFile = this.startTime = undefined;
 
+        this.saveCache();
         this.save();
     },
 
@@ -391,6 +392,8 @@ Selections.prototype = {
                     delete self.toSave[prop];
                 }
 
+                self.saveCache();
+
                 $(self).trigger("saved", {
                     saved: toSave,
                     result: data
@@ -433,6 +436,7 @@ FileQueue.prototype = {
 
         if (latest) {
             latest.done = true;
+            this.saveToCache();
         }
     },
 
