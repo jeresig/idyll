@@ -73,10 +73,22 @@ $(function() {
     $(window).on("online", attemptSave);
     setInterval(attemptSave, 5000);
     attemptSave();
+});
 
-    $("html").on("touchstart", function(e) {
-        e.preventDefault();
-    });
+$("html").on("touchstart", function(e) {
+    e.preventDefault();
+});
+
+$(window.applicationCache).on({
+    updateready: function() {
+        // Get the cache to update
+        this.update();
+        this.swapCache();
+    },
+
+    error: function(e) {
+        $("#sync-status").text(e);
+    }
 });
 
 var SelectionCanvas = function(options) {
@@ -336,7 +348,7 @@ Selections.prototype = {
     save: function() {
         var self = this;
 
-        if (this.saving) {
+        if (this.saving || !navigator.onLine) {
             return;
         }
 
@@ -423,8 +435,8 @@ FileQueue.prototype = {
     getQueue: function(callback) {
         var self = this;
 
-        if (this.loading) {
-            callback(err, self.queue);
+        if (this.loading || !navigator.onLine) {
+            callback(null, self.queue);
             return;
         }
 
