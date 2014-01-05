@@ -79,6 +79,11 @@ $(function() {
     attemptSave();
 });
 
+var loginRedirect = function() {
+    window.location.href = "/login?returnTo=" +
+        encodeURIComponent(window.location.pathname);
+};
+
 $("html").on("touchstart", function(e) {
     e.preventDefault();
 });
@@ -392,7 +397,7 @@ Selections.prototype = {
             success: function(data) {
                 if (data.error) {
                     if (data.login) {
-                        window.location.href = "/login";
+                        loginRedirect();
                     } else {
                         $(self).trigger("error");
                     }
@@ -478,7 +483,7 @@ FileQueue.prototype = {
 
                 if (data.error) {
                     if (data.login) {
-                        window.location.href = "/login";
+                        loginRedirect();
                     }
                 } else {
                     self.loadData(data.images);

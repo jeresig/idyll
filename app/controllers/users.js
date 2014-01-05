@@ -54,6 +54,10 @@ exports.authCallback = login;
  */
 
 exports.login = function(req, res) {
+    if (req.query.returnTo) {
+        req.session.returnTo = req.query.returnTo;
+    }
+
     res.render("users/login", {
         title: "Login",
         message: req.flash("error")
