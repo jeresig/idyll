@@ -11,7 +11,7 @@
     "async": "~0.2.9",
     "imageinfo": "~1.0.4",
     "glob": "~3.2.7",
-    "appcache-glob": "~0.0.1",
+    "appcache-glob": "~0.0.2",
     "passport": "~0.1.17",
     "passport-local": "~0.1.6",
     "connect-mongo": "~0.4.0",
