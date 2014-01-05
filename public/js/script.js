@@ -91,7 +91,7 @@ $(window.applicationCache).on({
     },
 
     error: function(e) {
-        $("#sync-status").text(e);
+        $("#sync-status").text("Error caching.");
     }
 });
 
@@ -387,17 +387,25 @@ Selections.prototype = {
             },
 
             success: function(data) {
-                // Remove the saved items from the queue
-                for (var prop in toSave) {
-                    delete self.toSave[prop];
+                if (data.error) {
+                    if (data.login) {
+                        window.location.href = "/login";
+                    } else {
+                        $(self).trigger("error");
+                    }
+                } else {
+                    // Remove the saved items from the queue
+                    for (var prop in toSave) {
+                        delete self.toSave[prop];
+                    }
+
+                    self.saveCache();
+
+                    $(self).trigger("saved", {
+                        saved: toSave,
+                        result: data
+                    });
                 }
-
-                self.saveCache();
-
-                $(self).trigger("saved", {
-                    saved: toSave,
-                    result: data
-                });
             },
 
             error: function() {
@@ -464,8 +472,15 @@ FileQueue.prototype = {
 
             success: function(data) {
                 self.loading = false;
-                self.loadData(data.images);
-                callback(null, self.queue);
+
+                if (data.error) {
+                    if (data.login) {
+                        window.location.href = "/login";
+                    }
+                } else {
+                    self.loadData(data.images);
+                    callback(null, self.queue);
+                }
             },
 
             error: function() {

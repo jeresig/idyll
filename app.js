@@ -78,17 +78,28 @@ app.configure("development", function() {
     app.use(express.errorHandler());
 });
 
-var requiresLogin = function (req, res, next) {
-    if (!req.isAuthenticated()) {
-        req.session.returnTo = req.originalUrl;
-        return res.redirect("/login");
-    }
-    next();
+var requiresLogin = function(responseData) {
+    return function (req, res, next) {
+        if (!req.isAuthenticated()) {
+            if (responseData !== undefined) {
+                return res.send(responseData);
+            } else {
+                req.session.returnTo = req.originalUrl;
+                return res.redirect("/login");
+            }
+        }
+        next();
+    };
 };
 
 var passportOptions = {
     failureFlash: "Invalid email or password.",
     failureRedirect: "/login"
+};
+
+var loginJSON = {
+    error: "Login required.",
+    login: true
 };
 
 app.get("/login", users.login);
@@ -101,11 +112,11 @@ app.get("/users/:userId", users.show);
 
 app.param("userId", users.user);
 
-app.get("/", requiresLogin, routes.index);
-app.get("/mobile", requiresLogin, routes.mobile);
-app.post("/selections", requiresLogin, routes.saveSelections);
-app.get("/queue", requiresLogin, routes.imageQueue);
-app.get("/offline.appcache", requiresLogin, routes.appCache);
+app.get("/", requiresLogin(), routes.index);
+app.get("/mobile", requiresLogin(), routes.mobile);
+app.post("/selections", requiresLogin(loginJSON), routes.saveSelections);
+app.get("/queue", requiresLogin(loginJSON), routes.imageQueue);
+app.get("/offline.appcache", requiresLogin(""), routes.appCache);
 
 app.listen(app.get("port"));
 
