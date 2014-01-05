@@ -88,6 +88,9 @@ $(window.applicationCache).on({
         // Get the cache to update
         this.update();
         this.swapCache();
+
+        // Force the page to reload to get the updated version
+        window.location.reload();
     },
 
     error: function(e) {
