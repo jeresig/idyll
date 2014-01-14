@@ -37,7 +37,7 @@ $(function() {
         if (!nextFile) {
             // TODO: Show some sort of error?
             // Get them to go online and re-sync, if offline.
-            $("#sync-status").text("No more files! Reload.");
+            $("#sync-status").text("No more files! Go online.");
             return;
         }
 
@@ -93,9 +93,18 @@ $(window.applicationCache).on({
         // Get the cache to update
         this.update();
         this.swapCache();
+    },
 
-        // Force the page to reload to get the updated version
-        window.location.reload();
+    downloading: function() {
+        $("#sync-status").text("Downloading files...");
+    },
+
+    noupdate: function() {
+        $("#sync-status").text("Cached.");
+    },
+
+    cached: function() {
+        $("#sync-status").text("Cached.");
     },
 
     error: function(e) {

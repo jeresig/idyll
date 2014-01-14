@@ -11,8 +11,10 @@
 {% block content %}
 <div class="toolbar">
     <div class="status pull-left">
-        <div id="sync-status"></div>
-        <div id="online-status"></div>
+        <div>
+            <span id="online-status"></span>
+            <span id="sync-status"></span>
+        </div>
         <div id="save-status"></div>
     </div>
     <canvas id="preview" width="40" height="40"></canvas>
