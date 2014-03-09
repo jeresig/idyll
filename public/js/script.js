@@ -60,9 +60,15 @@ $(function() {
         nextImage();
     });
 
+    $("#next").on("vclick", function() {
+        selectionCanvas.saveSelection();
+        selectionCanvas.resetSelection();
+    });
+
     $("#done").on("vclick", function() {
         fileQueue.markDone();
-        selections.finish(selectionCanvas.computeSlice());
+        selectionCanvas.saveSelection();
+        selections.finish(selectionCanvas.getSelections());
         nextImage();
     });
 
@@ -174,9 +180,27 @@ SelectionCanvas.prototype = {
     resetImage: function() {
         this.ctx.clearRect(0, 0, this.width, this.height);
 
-        this.points = [];
         this.curImage = null;
         this.rotated = false;
+        this.selections = [];
+
+        this.resetSelection();
+    },
+
+    resetSelection: function() {
+        this.points = [];
+        this.drawImage();
+    },
+
+    getSelections: function() {
+        return this.selections || [];
+    },
+
+    saveSelection: function() {
+        var slice = this.computeSlice();
+        if (slice.width !== 0 && slice.height !== 0) {
+            this.selections.push(slice);
+        }
     },
 
     loadImage: function(file, callback) {
@@ -210,6 +234,10 @@ SelectionCanvas.prototype = {
         var height = this.height;
 
         ctx.clearRect(0, 0, width, height);
+
+        if (!this.curImage) {
+            return;
+        }
 
         ctx.save();
 
@@ -287,8 +315,8 @@ SelectionCanvas.prototype = {
             return {
                 x: 0,
                 y: 0,
-                width: img.width,
-                height: img.height
+                width: 0,
+                height: 0
             };
         }
 
@@ -354,9 +382,9 @@ Selections.prototype = {
         this.startTime = (new Date).getTime();
     },
 
-    finish: function(selection) {
+    finish: function(selections) {
         this.toSave[this.curFile] = {
-            selections: [selection],
+            selections: selections,
             started: this.startTime,
             completed: (new Date).getTime()
         };

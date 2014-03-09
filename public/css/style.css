@@ -13,7 +13,7 @@ html, body {
     overflow: auto;
 }
 
-button#done {
+button#done, button#next {
     -webkit-appearance: none;
     font-size: 15px;
     height: 40px;

@@ -19,5 +19,6 @@
     </div>
     <canvas id="preview" width="40" height="40"></canvas>
     <button id="done" class="pull-right">Done &raquo;</button>
+    <button id="next" class="pull-right">Next &raquo;</button>
 </div>
 {% endblock %}
