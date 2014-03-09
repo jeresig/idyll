@@ -13,6 +13,12 @@ html, body {
     overflow: auto;
 }
 
+.buttons {
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+
 button#done, button#next {
     -webkit-appearance: none;
     font-size: 15px;

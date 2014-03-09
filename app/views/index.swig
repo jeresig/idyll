@@ -17,8 +17,9 @@
         </div>
         <div id="save-status"></div>
     </div>
-    <canvas id="preview" width="40" height="40"></canvas>
-    <button id="done" class="pull-right">Done &raquo;</button>
-    <button id="next" class="pull-right">Next &raquo;</button>
+    <div class="buttons">
+        <button id="next">Next &raquo;</button>
+        <button id="done">Done &raquo;</button>
+    </div>
 </div>
 {% endblock %}
