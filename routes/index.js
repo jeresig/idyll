@@ -3,8 +3,9 @@ var mongoose = require("mongoose");
 var appcache = require("appcache-glob");
 
 var User = mongoose.model("User");
-var Image = mongoose.model("Image");
-var Selection = mongoose.model("Selection");
+var Job = mongoose.model("Job");
+var Data = mongoose.model("Data");
+var Result = mongoose.model("Result");
 
 var cacheSize = 200;
 
@@ -29,80 +30,82 @@ exports.mobile = function(req, res) {
     res.render('index', {offline: true});
 };
 
-var getAndAssignImages = function(req, callback) {
+var getAndAssignTask = function(req, callback) {
     var user = req.user;
 
-    Image.find({assigned: user}, function(err, images) {
+    Task.find({assigned: user}, function(err, tasks) {
         if (err) {
             return callback(err);
         }
 
-        var num = cacheSize - images.length;
+        var num = cacheSize - tasks.length;
 
         if (num <= 0) {
-            return callback(null, images);
+            return callback(null, tasks);
         }
 
-        Image.where("assigned").size(0)
-            .where("selections").size(0)
+        Data.where("assigned").size(0)
+            .where("results").size(0)
             .limit(num)
             .exec(function(err, additional) {
                 if (err) {
                     return callbac(err);
                 }
 
-                additional.forEach(function(image) {
-                    image.assigned.push(user);
-                    image.save();
-                    images.push(image);
+                additional.forEach(function(task) {
+                    task.assigned.push(user);
+                    task.save();
+                    tasks.push(task);
                 });
 
                 // If nothing left look for things that are
                 // incomplete and we're not assigned to.
-                num = cacheSize - images.length;
+                num = cacheSize - tasks.length;
 
                 if (num <= 0) {
-                    return callback(null, images);
+                    return callback(null, tasks);
                 }
 
-                Image.where("assigned").ne(user)
-                    .where("selections").size(0)
+                Data.where("assigned").ne(user)
+                    .where("results").size(0)
                     .limit(num)
                     .exec(function(err, additional) {
-                        additional.forEach(function(image) {
-                            image.assigned.push(user);
-                            image.save();
-                            images.push(image);
+                        additional.forEach(function(task) {
+                            task.assigned.push(user);
+                            task.save();
+                            tasks.push(task);
                         });
                         
-                        callback(null, images);
+                        callback(null, tasks);
                     });
             });
     });
 };
 
 exports.imageQueue = function(req, res) {
-    getAndAssignImages(req, function(err, images) {
+    getAndAssignTasks(req, function(err, tasks) {
         res.send(200, {
-            images: images.map(function(image) {
-                return image.scaled;
+            tasks: tasks.map(function(task) {
+                return task._id; // TODO: Change this
             })
         });
     });
 };
 
+// TODO: Remove cache stuff
 exports.appCache = function(req, res) {
     var cache = baseAppCache.clone();
 
-    getAndAssignImages(req, function(err, images) {
-        images.forEach(function(image) {
-            cache.addCache("/images/scaled/" + image.scaled.file);
+    getAndAssignTasks(req, function(err, tasks) {
+        tasks.forEach(function(task) {
+            cache.addCache("/images/scaled/" + task.scaled.file);
         });
 
         cache.pipe(res);
     });
 };
 
+// TODO: saveResults
 exports.saveSelections = function(req, res) {
     var data = req.body;
     var user = req.user;
