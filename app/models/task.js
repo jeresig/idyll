@@ -20,6 +20,9 @@ var TaskSchema = new Schema({
         // The name of the file (e.g. foo.jpg)
         name: String,
 
+        // The content type of the file (e.g. image/jpeg)
+        type: String,
+
         // The full location of the file (e.g. /var/files/foo.jpg)
         path: String,
 

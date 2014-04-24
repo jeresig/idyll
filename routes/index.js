@@ -1,4 +1,7 @@
+var fs = require("fs");
+
 var async = require("async");
+var request = require("request");
 var mongoose = require("mongoose");
 var appcache = require("appcache-glob");
 
@@ -30,14 +33,31 @@ exports.mobile = function(req, res) {
     res.render("index", {offline: true});
 };
 
-// TODO: Have a way to get current job list
-// TODO: Have a way to assign jobs
+exports.getJobs = function(req, res) {
+    Job.find({ended: {$ne: null}}, function(err, jobs) {
+        if (err) {
+            res.send(404);
+            return;
+        }
+
+        jobs.forEach(function(job) {
+            job.id = job._id;
+            delete job._id;
+        });
+
+        res.send(200, jobs);
+    });
+};
 
 var getAndAssignTask = function(req, callback) {
+    var jobID = req.params.job;
     var user = req.user;
 
-    // TODO: Limit by job ID
-    Task.find({assigned: user}, function(err, tasks) {
+    Task.find({
+        job: jobID,
+        assigned: user
+    })
+    .exec(function(err, tasks) {
         if (err) {
             return callback(err);
         }
@@ -48,41 +68,47 @@ var getAndAssignTask = function(req, callback) {
             return callback(null, tasks);
         }
 
-        Data.where("assigned").size(0)
-            .where("results").size(0)
+        Task.find({
+            job: jobID,
+            assigned: {$size: 0},
+            results: {$size: 0}
+        })
+        .limit(num)
+        .exec(function(err, additional) {
+            if (err) {
+                return callbac(err);
+            }
+
+            additional.forEach(function(task) {
+                task.assigned.push(user);
+                task.save();
+                tasks.push(task);
+            });
+
+            // If nothing left look for things that are
+            // incomplete and we're not assigned to.
+            num = taskQueueSize - tasks.length;
+
+            if (num <= 0) {
+                return callback(null, tasks);
+            }
+
+            Task.find({
+                job: jobID,
+                assigned: {$ne: user},
+                results: {$size: 0}
+            })
             .limit(num)
             .exec(function(err, additional) {
-                if (err) {
-                    return callbac(err);
-                }
-
                 additional.forEach(function(task) {
                     task.assigned.push(user);
                     task.save();
                     tasks.push(task);
                 });
 
-                // If nothing left look for things that are
-                // incomplete and we're not assigned to.
-                num = taskQueueSize - tasks.length;
-
-                if (num <= 0) {
-                    return callback(null, tasks);
-                }
-
-                Data.where("assigned").ne(user)
-                    .where("results").size(0)
-                    .limit(num)
-                    .exec(function(err, additional) {
-                        additional.forEach(function(task) {
-                            task.assigned.push(user);
-                            task.save();
-                            tasks.push(task);
-                        });
-                        
-                        callback(null, tasks);
-                    });
+                callback(null, tasks);
             });
+        });
     });
 };
 
@@ -97,34 +123,43 @@ exports.taskQueue = function(req, res) {
 };
 
 exports.getTask = function(req, res) {
-    var id = req.params.id;
+    var id = req.params.task;
 
-    Task.findOne({_id: id}, function(err, task) {
-        if (err || !task) {
-            res.send(404);
-            return;
-        }
+    Task.findOne({_id: id})
+        .populate("job")
+        .exec(function(err, task) {
+            if (err || !task) {
+                res.send(404);
+                return;
+            }
 
-        var result = new Result(data.results[id]);
-        result.user = user;
-        result.task = task;
-        result.save(function(err) {
-            // The task is no longer assigned to the user.
-            // TODO: If we want a minimum number of results before
-            // closing we should change this logic.
-            task.assigned = [];
-            task.results.push(result);
-            task.save(callback);
+            async.map(task.files, function(file, callback) {
+                var buffers = [];
+                var stream = file.path.indexOf("http") === 0 ?
+                    request(file.path) :
+                    fs.createReadStream(file.path);
+
+                stream.on("data", function(buffer) {
+                    buffers.push(buffer);
+                })
+                .on("end", function() {
+                    callback(null, {
+                        name: file.name,
+                        type: file.type,
+                        file: Buffer.concat(buffers).toString("base64"),
+                        data: file.data
+                    });
+                });
+            }, function(err, files) {
+                res.send(200, {
+                    id: id,
+                    // Is this needed? Perhaps it's already implied?
+                    type: task.job.type,
+                    data: task.data,
+                    files: files
+                });
+            });
         });
-    });
-
-    getAndAssignTasks(req, function(err, tasks) {
-        res.send(200, {
-            tasks: tasks.map(function(task) {
-                return task._id;
-            })
-        });
-    });
 };
 
 exports.appCache = function(req, res) {
