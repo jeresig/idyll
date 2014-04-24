@@ -7,7 +7,7 @@ var Job = mongoose.model("Job");
 var Data = mongoose.model("Data");
 var Result = mongoose.model("Result");
 
-var cacheSize = 200;
+var taskQueueSize = 200;
 
 // Load Appcache
 var baseAppCache = appcache
@@ -23,22 +23,26 @@ var baseAppCache = appcache
     .addNetwork(["/", "/selections", "/queue"]);
 
 exports.index = function(req, res) {
-    res.render('index');
+    res.render("index");
 };
 
 exports.mobile = function(req, res) {
-    res.render('index', {offline: true});
+    res.render("index", {offline: true});
 };
+
+// TODO: Have a way to get current job list
+// TODO: Have a way to assign jobs
 
 var getAndAssignTask = function(req, callback) {
     var user = req.user;
 
+    // TODO: Limit by job ID
     Task.find({assigned: user}, function(err, tasks) {
         if (err) {
             return callback(err);
         }
 
-        var num = cacheSize - tasks.length;
+        var num = taskQueueSize - tasks.length;
 
         if (num <= 0) {
             return callback(null, tasks);
@@ -60,7 +64,7 @@ var getAndAssignTask = function(req, callback) {
 
                 // If nothing left look for things that are
                 // incomplete and we're not assigned to.
-                num = cacheSize - tasks.length;
+                num = taskQueueSize - tasks.length;
 
                 if (num <= 0) {
                     return callback(null, tasks);
@@ -82,61 +86,89 @@ var getAndAssignTask = function(req, callback) {
     });
 };
 
-exports.imageQueue = function(req, res) {
+exports.taskQueue = function(req, res) {
     getAndAssignTasks(req, function(err, tasks) {
         res.send(200, {
             tasks: tasks.map(function(task) {
-                return task._id; // TODO: Change this
+                return task._id;
             })
         });
     });
 };
 
-// TODO: Remove cache stuff
-exports.appCache = function(req, res) {
-    var cache = baseAppCache.clone();
+exports.getTask = function(req, res) {
+    var id = req.params.id;
+
+    Task.findOne({_id: id}, function(err, task) {
+        if (err || !task) {
+            res.send(404);
+            return;
+        }
+
+        var result = new Result(data.results[id]);
+        result.user = user;
+        result.task = task;
+        result.save(function(err) {
+            // The task is no longer assigned to the user.
+            // TODO: If we want a minimum number of results before
+            // closing we should change this logic.
+            task.assigned = [];
+            task.results.push(result);
+            task.save(callback);
+        });
+    });
 
     getAndAssignTasks(req, function(err, tasks) {
-        tasks.forEach(function(task) {
-            cache.addCache("/images/scaled/" + task.scaled.file);
+        res.send(200, {
+            tasks: tasks.map(function(task) {
+                return task._id;
+            })
         });
-
-        cache.pipe(res);
     });
 };
 
-// TODO: saveResults
-exports.saveSelections = function(req, res) {
+exports.appCache = function(req, res) {
+    baseAppCache.pipe(res);
+};
+
+exports.saveResults = function(req, res) {
     var data = req.body;
     var user = req.user;
-    var files = Object.keys(data.selections);
+    var ids = Object.keys(data.results);
 
-    async.eachLimit(files, 5, function(file, callback) {
-        // TODO: Make this more flexible.
-        var fileName = file.replace("/images/scaled/", "");
+    /* Task result format:
+     * {
+     *   ID: {
+     *       data: {...},
+     *       started: Date,
+     *       completed: Date
+     *   }
+     * }
+     */
 
-        Image.findOne({"scaled.file": fileName}, function(err, image) {
-            if (err || !image) {
+    async.eachLimit(ids, 5, function(id, callback) {
+        Task.findOne({_id: id}, function(err, task) {
+            if (err || !task) {
                 return callback(err);
             }
 
-            var selection = new Selection(data.selections[file]);
-            selection.user = user;
-            selection.image = image;
-            selection.save(function(err) {
-                // The image is no longer assigned to the user.
-                // TODO: If we want a minimum number of selections before
+            var result = new Result(data.results[id]);
+            result.user = user;
+            result.task = task;
+            result.save(function(err) {
+                // The task is no longer assigned to the user.
+                // TODO: If we want a minimum number of results before
                 // closing we should change this logic.
-                image.assigned = [];
-                image.selections.push(selection);
-                image.save(callback);
+                task.assigned = [];
+                task.results.push(result);
+                task.save(callback);
             });
         });
-    }, function(err, images) {
+    }, function(err, tasks) {
         if (err) {
-            res.send(500, {error: "Error saving selections."});
+            res.send(500, {error: "Error saving results."});
         } else {
-            exports.imageQueue(req, res);
+            exports.taskQueue(req, res);
         }
     });
 };

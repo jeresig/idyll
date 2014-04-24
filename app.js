@@ -114,8 +114,9 @@ app.param("userId", users.user);
 
 app.get("/", requiresLogin(), routes.index);
 app.get("/mobile", requiresLogin(), routes.mobile);
-app.post("/selections", requiresLogin(loginJSON), routes.saveSelections);
-app.get("/queue", requiresLogin(loginJSON), routes.imageQueue);
+app.post("/results", requiresLogin(loginJSON), routes.saveResults);
+app.get("/tasks", requiresLogin(loginJSON), routes.taskQueue);
+app.get("/task/:id", requiresLogin(loginJSON), routes.getTask);
 app.get("/offline.appcache", requiresLogin(""), routes.appCache);
 
 app.listen(app.get("port"));
