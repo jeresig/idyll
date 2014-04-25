@@ -1,3 +1,92 @@
+var TaskManager = {
+    init: function(jobID) {
+        var self = this;
+
+        this.taskQueue = new TaskQueue(jobID);
+        this.results = new Results(jobID);
+
+        $(this.results).on({
+            saving: function() {
+                $("#save-status").html(
+                    "<span class='glyphicon glyphicon-floppy-save'></span> Saving...");
+            },
+
+            saved: function(e, data) {
+                self.taskQueue.loadData(data.result);
+
+                $("#save-status").html(
+                    "<span class='glyphicon glyphicon-floppy-saved'></span> Saved!");
+            },
+
+            error: function() {
+                $("#save-status").html(
+                    "<span class='glyphicon glyphicon-floppy-remove'></span> Error Saving.");
+            }
+        });
+
+        this.taskQueue.update(function() {
+            self.nextTask();
+        });
+
+        $(window).on("online", function() {
+            self.save();
+        });
+        setInterval(function() {
+            self.save();
+        }, 5000);
+
+        // NOTE: Should we be creating this?
+        this.canvas = document.createElement("canvas");
+        document.body.appendChild(this.canvas);
+
+        this.taskQueue.loadFromCache(function() {
+            self.results.loadFromCache(function() {
+                // Immediately attempt to save any pending results.
+                self.save();
+            });
+        });
+    },
+
+    done: function(data) {
+        this.taskQueue.markDone();
+        this.results.finish(data);
+        this.nextTask();
+    },
+
+    save: function() {
+        $("#online-status").html(window.navigator.onLine ?
+            "<span class='glyphicon glyphicon-ok-sign'></span> Online." :
+            "<span class='glyphicon glyphicon-minus-sign'></span> Offline.");
+
+        this.results.save();
+    },
+
+    nextTask: function() {
+        var self = this;
+        var task = this.taskQueue.latest();
+
+        if (!task) {
+            // TODO: Show some sort of error?
+            // Get them to go online and re-sync, if offline.
+            $("#sync-status").text("No more tasks! Go online.");
+            return;
+        }
+
+        task.files.forEach(function(file) {
+            if (typeof file.file === "string") {
+                // NOTE: For now it's assumed that all files are images
+                var img = new Image();
+                img.src = "data:" + file.type + "," + file.file;
+                file.file = img;
+            }
+
+            return file;
+        });
+
+        this.results.start(task);
+    }
+};
+
 var SyncedDataCache = function() {
     this.url = "";
     this.data = [];
@@ -155,14 +244,12 @@ var Jobs = function(callback) {
 
 Jobs.prototype = new SyncedDataCache();
 
-var Results = function(jobID, callback) {
+var Results = function(jobID) {
     this.data = {};
 
     this.url = "/jobs/" + jobID;
     this.saving = false;
     this.cacheKey = "result-data-" + jobID;
-
-    this.loadFromCache(callback);
 };
 
 Results.prototype = new SyncedDataCache();
@@ -188,14 +275,12 @@ Results.prototype.finish = function(results) {
     });
 };
 
-var TaskQueue = function(jobID, callback) {
+var TaskQueue = function(jobID) {
     this.data = [];
 
     this.loading = false;
     this.jobID = jobID;
     this.cacheKey = "task-queue-" + jobID;
-
-    this.loadFromCache(callback);
 };
 
 TaskQueue.prototype = new SyncedDataCache();
