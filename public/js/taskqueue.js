@@ -6,21 +6,8 @@ var TaskManager = {
         this.results = new Results(jobID);
 
         $(this.results).on({
-            saving: function() {
-                $("#save-status").html(
-                    "<span class='glyphicon glyphicon-floppy-save'></span> Saving...");
-            },
-
             saved: function(e, data) {
                 self.taskQueue.loadData(data.result);
-
-                $("#save-status").html(
-                    "<span class='glyphicon glyphicon-floppy-saved'></span> Saved!");
-            },
-
-            error: function() {
-                $("#save-status").html(
-                    "<span class='glyphicon glyphicon-floppy-remove'></span> Error Saving.");
             }
         });
 
@@ -28,19 +15,16 @@ var TaskManager = {
             self.nextTask();
         });
 
-        $(window).on("online", function() {
-            self.save();
-        });
-        setInterval(function() {
-            self.save();
-        }, 5000);
-
-        // NOTE: Should we be creating this?
-        this.canvas = document.createElement("canvas");
-        document.body.appendChild(this.canvas);
-
         this.taskQueue.loadFromCache(function() {
             self.results.loadFromCache(function() {
+                $(window).on("online", function() {
+                    self.save();
+                });
+
+                setInterval(function() {
+                    self.save();
+                }, 5000);
+
                 // Immediately attempt to save any pending results.
                 self.save();
             });
@@ -54,21 +38,15 @@ var TaskManager = {
     },
 
     save: function() {
-        $("#online-status").html(window.navigator.onLine ?
-            "<span class='glyphicon glyphicon-ok-sign'></span> Online." :
-            "<span class='glyphicon glyphicon-minus-sign'></span> Offline.");
-
+        $(this).trigger("saving");
         this.results.save();
     },
 
     nextTask: function() {
-        var self = this;
         var task = this.taskQueue.latest();
 
         if (!task) {
-            // TODO: Show some sort of error?
-            // Get them to go online and re-sync, if offline.
-            $("#sync-status").text("No more tasks! Go online.");
+            $(this).trigger("empty");
             return;
         }
 
@@ -244,6 +222,33 @@ var Jobs = function(callback) {
 
 Jobs.prototype = new SyncedDataCache();
 
+var TaskQueue = function(jobID) {
+    this.data = [];
+
+    this.loading = false;
+    this.jobID = jobID;
+    this.cacheKey = "task-queue-" + jobID;
+};
+
+TaskQueue.prototype = new SyncedDataCache();
+
+TaskQueue.prototype.latest = function() {
+    for (var i = 0; i < this.data.length; i++) {
+        if (!this.data[i].done) {
+            return this.data[i];
+        }
+    }
+};
+
+TaskQueue.prototype.markDone = function(callback) {
+    var latest = this.latest();
+
+    if (latest) {
+        latest.done = true;
+        this.saveToCache(callback);
+    }
+};
+
 var Results = function(jobID) {
     this.data = {};
 
@@ -273,31 +278,4 @@ Results.prototype.finish = function(results) {
     this.saveToCache(function() {
         self.save();
     });
-};
-
-var TaskQueue = function(jobID) {
-    this.data = [];
-
-    this.loading = false;
-    this.jobID = jobID;
-    this.cacheKey = "task-queue-" + jobID;
-};
-
-TaskQueue.prototype = new SyncedDataCache();
-
-TaskQueue.prototype.latest = function() {
-    for (var i = 0; i < this.data.length; i++) {
-        if (!this.data[i].done) {
-            return this.data[i];
-        }
-    }
-};
-
-TaskQueue.prototype.markDone = function(callback) {
-    var latest = this.latest();
-
-    if (latest) {
-        latest.done = true;
-        this.saveToCache(callback);
-    }
 };
