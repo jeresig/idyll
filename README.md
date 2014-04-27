@@ -1,3 +1,7 @@
-# Mobile Offline Image Cropper
+# Idyll
 
-This is an application for serving up images to users for cropping. The images can be cropped in a browser, on a mobile device, and offline.
+* A mobile application
+* That's usable offline
+* For doing crowd sourcing
+
+Created by John Resig in collaboration with Mauricio Giraldo of the NYPL Labs team.

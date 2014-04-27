@@ -16,7 +16,24 @@ var JobSchema = new Schema({
     started: {type: Date, default: Date.now},
 
     // When the job ended (if set, job is no longer active)
-    ended: Date
+    ended: Date,
+
+    api: {
+        // Oauth2 endpoint for authenticating the user
+        auth: String,
+
+        // API endpoint for getting an array of IDs for the user
+        // to complete.
+        getTasks: String,
+
+        // API endpoint for getting more information about a single
+        // task from a server.
+        getTask: String,
+
+        // API endpoint for posting the results of a task as generated
+        // by a user in the client.
+        postResult: String
+    }
 });
 
 mongoose.model("Job", JobSchema);

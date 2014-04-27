@@ -113,6 +113,12 @@ var getAndAssignTask = function(req, callback) {
 };
 
 exports.taskQueue = function(req, res) {
+    if (req.job.api && req.job.api.getTasks) {
+        // TODO: Pass in user session
+        request(req.job.api.getTasks).pipe(res);
+        return;
+    }
+
     getAndAssignTasks(req, function(err, tasks) {
         res.send(200, {
             tasks: tasks.map(function(task) {
@@ -122,44 +128,58 @@ exports.taskQueue = function(req, res) {
     });
 };
 
+var cleanTask = function(req, res, task) {
+    async.map(task.files, function(file, callback) {
+        var buffers = [];
+        var stream = file.path.indexOf("http") === 0 ?
+            request(file.path) :
+            fs.createReadStream(file.path);
+
+        stream.on("data", function(buffer) {
+            buffers.push(buffer);
+        })
+        .on("end", function() {
+            callback(null, {
+                name: file.name,
+                type: file.type,
+                file: Buffer.concat(buffers).toString("base64"),
+                data: file.data
+            });
+        });
+    }, function(err, files) {
+        res.send(200, {
+            id: req.params.task,
+            type: req.job.type,
+            data: task.data,
+            files: files
+        });
+    });
+};
+
 exports.getTask = function(req, res) {
     var id = req.params.task;
 
-    Task.findOne({_id: id})
-        .populate("job")
-        .exec(function(err, task) {
+    if (req.job.api && req.job.api.getTask) {
+        // TODO: Pass in Task ID and user session
+        request(req.job.api.getTask, function(err, task) {
             if (err || !task) {
                 res.send(404);
                 return;
             }
 
-            async.map(task.files, function(file, callback) {
-                var buffers = [];
-                var stream = file.path.indexOf("http") === 0 ?
-                    request(file.path) :
-                    fs.createReadStream(file.path);
-
-                stream.on("data", function(buffer) {
-                    buffers.push(buffer);
-                })
-                .on("end", function() {
-                    callback(null, {
-                        name: file.name,
-                        type: file.type,
-                        file: Buffer.concat(buffers).toString("base64"),
-                        data: file.data
-                    });
-                });
-            }, function(err, files) {
-                res.send(200, {
-                    id: id,
-                    // Is this needed? Perhaps it's already implied?
-                    type: task.job.type,
-                    data: task.data,
-                    files: files
-                });
-            });
+            cleanTask(req, res, JSON.parse(task));
         });
+        return;
+    }
+
+    Task.findOne({_id: id}, function(err, task) {
+        if (err || !task) {
+            res.send(404);
+            return;
+        }
+
+        cleanTask(req, res, task);
+    });
 };
 
 exports.appCache = function(req, res) {

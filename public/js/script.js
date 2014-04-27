@@ -4,8 +4,18 @@ $(function() {
     var canvas = document.createElement("canvas");
     document.body.appendChild(canvas);
 
-    TaskManager.init();
+    var jobs = new Jobs();
+
+    jobs.loadFromCache(function() {
+        jobs.update(function() {
+            // TODO: Render job picker
+        });
+    });
+
+    TaskManager.init(jobID);
 });
+
+
 
 $(TaskManager).on({
     saving: function() {

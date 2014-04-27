@@ -1,34 +1,33 @@
 var TaskManager = {
     init: function(jobID) {
-        var self = this;
-
         this.taskQueue = new TaskQueue(jobID);
         this.results = new Results(jobID);
 
         $(this.results).on({
             saved: function(e, data) {
-                self.taskQueue.loadData(data.result);
-            }
+                this.taskQueue.loadData(data.result);
+            }.bind(this)
         });
 
-        this.taskQueue.update(function() {
-            self.nextTask();
-        });
-
+        // TODO: Parallelize this.
         this.taskQueue.loadFromCache(function() {
-            self.results.loadFromCache(function() {
+            this.results.loadFromCache(function() {
+                this.taskQueue.update(function() {
+                    this.nextTask();
+                }.bind(this));
+
                 $(window).on("online", function() {
-                    self.save();
-                });
+                    this.save();
+                }.bind(this));
 
                 setInterval(function() {
-                    self.save();
-                }, 5000);
+                    this.save();
+                }.bind(this), 5000);
 
                 // Immediately attempt to save any pending results.
-                self.save();
-            });
-        });
+                this.save();
+            }.bind(this));
+        }.bind(this));
     },
 
     done: function(data) {
@@ -43,31 +42,32 @@ var TaskManager = {
     },
 
     nextTask: function() {
-        var task = this.taskQueue.latest();
+        var taskID = this.taskQueue.latestTaskID();
 
-        if (!task) {
+        if (!taskID) {
             $(this).trigger("empty");
             return;
         }
 
-        task.files.forEach(function(file) {
-            if (typeof file.file === "string") {
-                // NOTE: For now it's assumed that all files are images
-                var img = new Image();
-                img.src = "data:" + file.type + "," + file.file;
-                file.file = img;
-            }
+        this.taskQueue.getTask(taskID, function(task) {
+            task.files.forEach(function(file) {
+                if (typeof file.file === "string") {
+                    // NOTE: For now it's assumed that all files are images
+                    var img = new Image();
+                    img.src = "data:" + file.type + "," + file.file;
+                    file.file = img;
+                }
 
-            return file;
+                return file;
+            });
+
+            this.results.start(task);
         });
-
-        this.results.start(task);
     }
 };
 
 var SyncedDataCache = function() {
     this.url = "";
-    this.data = [];
     this.loading = false;
     this.saving = false;
 };
@@ -81,15 +81,18 @@ var SyncedDataCache = function() {
 
 SyncedDataCache.prototype = {
     loadFromCache: function(callback) {
-        var self = this;
         localforage.getItem(this.cacheKey, function(data) {
-            self.data = data;
+            this.data = data;
             callback();
-        });
+        }.bind(this));
     },
 
     saveToCache: function(callback) {
         localforage.saveItem(this.cacheKey, this.data, callback);
+    },
+
+    removeFromCache: function(callback) {
+        localforage.removeItem(this.cacheKey, callback);
     },
 
     loginRedirect: function() {
@@ -109,15 +112,19 @@ SyncedDataCache.prototype = {
     },
 
     loadData: function(data, callback) {
+        if (this.processData) {
+            data = this.processData(data);
+        }
         this.data = data;
         this.saveToCache(callback);
     },
 
     update: function(callback) {
-        var self = this;
+        // TODO: On taskQueue update, delete any old data out of the
+        // localforage cache, make sure it doesn't stick around.
 
         if (this.loading || !navigator.onLine) {
-            callback(null, self.data);
+            callback(null, this.data);
             return;
         }
 
@@ -131,29 +138,27 @@ SyncedDataCache.prototype = {
             timeout: 8000,
 
             complete: function() {
-                self.loading = false;
-            },
+                this.loading = false;
+            }.bind(this),
 
             success: function(data) {
                 if (data.error) {
-                    self.handleError(data, callback);
+                    this.handleError(data, callback);
                     return;
                 }
 
-                self.loadData(data, function() {
-                    callback(null, self.data);
-                });
-            },
+                this.loadData(data, function() {
+                    callback(null, this.data);
+                }.bind(this));
+            }.bind(this),
 
             error: function() {
-                self.handleError();
-            }
+                this.handleError();
+            }.bind(this)
         });
     },
 
     save: function() {
-        var self = this;
-
         if (this.saving || !navigator.onLine) {
             return;
         }
@@ -182,78 +187,124 @@ SyncedDataCache.prototype = {
             timeout: 8000,
 
             complete: function() {
-                self.saving = false;
-            },
+                this.saving = false;
+            }.bind(this),
 
             success: function(data) {
                 if (data.error) {
-                    self.handleError(data);
+                    this.handleError(data);
                     return;
                 }
 
                 // Remove the saved items from the queue
                 for (var prop in toSave) {
-                    delete self.data[prop];
+                    delete this.data[prop];
                 }
 
-                self.saveToCache(function() {
-                    $(self).trigger("saved", {
+                this.saveToCache(function() {
+                    $(this).trigger("saved", {
                         saved: toSave,
                         result: data
                     });
                 });
-            },
+            }.bind(this),
 
             error: function() {
-                self.handleError();
-            }
+                this.handleError();
+            }.bind(this)
         });
     }
 };
 
-var Jobs = function(callback) {
-    this.data = [];
-
-    this.loading = false;
+var Jobs = function() {
     this.cacheKey = "jobs-data";
-
-    this.loadFromCache(callback);
 };
 
 Jobs.prototype = new SyncedDataCache();
 
-var TaskQueue = function(jobID) {
-    this.data = [];
+var Task = function(jobID, taskID) {
+    this.url = "/jobs/" + jobID + "/tasks/" + taskID;
+    this.cacheKey = "tasks-" + jobID + "-" + taskID;
+};
 
-    this.loading = false;
-    this.jobID = jobID;
+Task.prototype = new SyncedDataCache();
+
+var TaskQueue = function(jobID) {
+    this.tasks = {};
+    this.url = "/jobs/" + jobID;
     this.cacheKey = "task-queue-" + jobID;
 };
 
 TaskQueue.prototype = new SyncedDataCache();
 
-TaskQueue.prototype.latest = function() {
+TaskQueue.prototype.processData = function(data) {
+    return data.map(function(task) {
+        return {
+            id: task,
+            done: false
+        }
+    });
+};
+
+TaskQueue.prototype.removeTask = function(taskID, callback) {
+    if (taskID in this.tasks) {
+        var task = this.tasks[taskID];
+        delete this.tasks[taskID];
+        task.removeFromCache(callback);
+        return;
+    }
+
+    var task = new Task(this.jobID, taskID);
+    task.removeFromCache(callback);
+};
+
+TaskQueue.prototype.getTask = function(taskID, callback) {
+    if (taskID in this.tasks) {
+        callback(null, this.tasks[taskID]);
+        return;
+    }
+
+    var task = new Task(this.jobID, taskID);
+
+    task.loadFromCache(function() {
+        if (task.data) {
+            this.tasks[taskID] = task;
+            callback(null, task);
+        } else {
+            task.update(function() {
+                this.tasks[taskID] = task;
+                callback(null, task);
+            }.bind(this));
+        }
+    }.bind(this));
+};
+
+TaskQueue.prototype.latestTaskID = function() {
     for (var i = 0; i < this.data.length; i++) {
         if (!this.data[i].done) {
-            return this.data[i];
+            return this.data[i].id;
         }
     }
 };
 
 TaskQueue.prototype.markDone = function(callback) {
-    var latest = this.latest();
+    var taskId = this.latestTaskID();
 
-    if (latest) {
-        latest.done = true;
-        this.saveToCache(callback);
+    if (taskId) {
+        this.data.forEach(function(task) {
+            if (task.id === taskID) {
+                task.done = true;
+            }
+        });
+
+        this.removeTask(taskID, function(err, task) {
+            this.saveToCache(callback);
+        }.bind(this));
     }
 };
 
 var Results = function(jobID) {
-    this.data = {};
-
     this.url = "/jobs/" + jobID;
-    this.saving = false;
     this.cacheKey = "result-data-" + jobID;
 };
 
@@ -265,8 +316,6 @@ Results.prototype.start = function(taskID) {
 };
 
 Results.prototype.finish = function(results) {
-    var self = this;
-
     this.data[this.curTask] = {
         results: results,
         started: this.startTime,
@@ -276,6 +325,6 @@ Results.prototype.finish = function(results) {
     this.curTask = this.startTime = undefined;
 
     this.saveToCache(function() {
-        self.save();
-    });
+        this.save();
+    }.bind(this));
 };

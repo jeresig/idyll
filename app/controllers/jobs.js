@@ -1,0 +1,12 @@
+exports.job = function(req, res, next, id) {
+    Job.findOne({ _id : id }).exec(function(err, job) {
+        if (err) {
+            return next(err);
+        }
+        if (!job) {
+            return next(new Error("Failed to load Job " + id));
+        }
+        req.job = job;
+        next();
+    });
+};

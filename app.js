@@ -27,6 +27,7 @@ fs.readdirSync(modelsDir).forEach(function (file) {
 
 var routes = require("./routes");
 var users = require("./app/controllers/users");
+var jobs = require("./app/controllers/jobs");
 
 // Bootstrap passport config
 require("./config/passport")(passport, config);
@@ -115,10 +116,12 @@ app.param("userId", users.user);
 app.get("/", requiresLogin(), routes.index);
 app.get("/mobile", requiresLogin(), routes.mobile);
 app.get("/jobs", requiresLogin(loginJSON), routes.getJobs);
-app.get("/jobs/:job", requiresLogin(loginJSON), routes.taskQueue);
-app.post("/jobs/:job", requiresLogin(loginJSON), routes.saveResults);
-app.get("/tasks/:task", requiresLogin(loginJSON), routes.getTask);
+app.get("/jobs/:jobId", requiresLogin(loginJSON), routes.taskQueue);
+app.post("/jobs/:jobId", requiresLogin(loginJSON), routes.saveResults);
+app.get("/jobs/:jobId/task/:task", requiresLogin(loginJSON), routes.getTask);
 app.get("/offline.appcache", requiresLogin(""), routes.appCache);
+
+app.param("jobId", jobs.job);
 
 app.listen(app.get("port"));
 

@@ -4,7 +4,7 @@ module.exports = {
             port: 3000,
         },
 
-        db: "mongodb://localhost/selection"
+        db: "mongodb://localhost/idyll"
     },
 
     production: {
@@ -12,6 +12,6 @@ module.exports = {
             port: 3000,
         },
 
-        db: "mongodb://localhost/selection"
+        db: "mongodb://localhost/idyll"
     }
 };
