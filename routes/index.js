@@ -186,20 +186,32 @@ exports.appCache = function(req, res) {
     baseAppCache.pipe(res);
 };
 
+/* Task result format:
+ * {
+ *   ID: {
+ *       data: {...},
+ *       started: Date,
+ *       completed: Date
+ *   }
+ * }
+ */
+
 exports.saveResults = function(req, res) {
     var data = req.body;
-    var user = req.user;
     var ids = Object.keys(data.results);
 
-    /* Task result format:
-     * {
-     *   ID: {
-     *       data: {...},
-     *       started: Date,
-     *       completed: Date
-     *   }
-     * }
-     */
+    if (req.job.api && req.job.api.saveResult) {
+        // TODO: Pass in Task ID and user session
+        request.post(req.job.api.saveResult, data, function(err) {
+            if (err) {
+                res.send(404);
+                return;
+            }
+
+            res.send(200);
+        });
+        return;
+    }
 
     async.eachLimit(ids, 5, function(id, callback) {
         Task.findOne({_id: id}, function(err, task) {
@@ -208,7 +220,7 @@ exports.saveResults = function(req, res) {
             }
 
             var result = new Result(data.results[id]);
-            result.user = user;
+            result.user = req.user;
             result.task = task;
             result.save(function(err) {
                 // The task is no longer assigned to the user.
