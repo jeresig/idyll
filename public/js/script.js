@@ -8,14 +8,30 @@ $(function() {
 
     jobs.loadFromCache(function() {
         jobs.update(function() {
-            // TODO: Render job picker
+            renderJobs(jobs);
+            $("#jobs").show();
         });
     });
-
-    TaskManager.init(jobID);
 });
 
+var renderJobs = function(jobs) {
+    $("#jobs").html(
+        jobs.data.map(function(job) {
+            return "<div class='job'>" +
+                "<a href='' id='" + job.id + "'>" + job.name + "</a>" +
+                "<p class='desc'>" + job.description + "</p>" +
+            "</job>";
+        }).join("");
+    );
+};
 
+$(document).on("click", "#jobs a", function() {
+    $("#jobs").hide();
+
+    var jobID = this.id;
+    TaskManager.init(jobID);
+    return false;
+});
 
 $(TaskManager).on({
     saving: function() {
