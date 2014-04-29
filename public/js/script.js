@@ -1,9 +1,5 @@
 
 $(function() {
-    // NOTE: Should we be creating this?
-    var canvas = document.createElement("canvas");
-    document.body.appendChild(canvas);
-
     var jobs = new Jobs();
 
     jobs.loadFromCache(function() {
