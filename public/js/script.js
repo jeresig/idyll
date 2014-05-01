@@ -25,8 +25,8 @@ $(document).on("click", "#jobs a", function() {
     $("#jobs").hide();
 
     TaskManager.init({
-        jobID: this.id,
-        jobType: "image-select",
+        id: this.id,
+        type: "image-select",
         el: $("#module")[0]
     });
 
@@ -38,6 +38,11 @@ $(TaskManager).on({
         $("#online-status").html(window.navigator.onLine ?
             "<span class='glyphicon glyphicon-ok-sign'></span> Online." :
             "<span class='glyphicon glyphicon-minus-sign'></span> Offline.");
+    },
+
+    resetting: function() {
+        $("#module").empty();
+        $("#buttons").empty();
     },
 
     empty: function() {

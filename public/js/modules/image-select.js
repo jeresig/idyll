@@ -13,12 +13,26 @@ var SelectionCanvas = function(options) {
 
     this.points = [];
     this.curImage = null;
+    this.curTask = null;
     this.rotated = false;
 
     this.bind();
 };
 
 SelectionCanvas.prototype = {
+    start: function(task) {
+        this.resetImage();
+
+        var file = task.files[0].file;
+
+        this.curTask = task;
+        this.curImage = file;
+
+        var aspectRatio = this.getAspect(file.width, file.height);
+        this.rotated = aspectRatio !== this.aspect;
+        this.drawImage();
+    },
+
     bind: function() {
         var self = this;
         var down = false;
@@ -66,6 +80,7 @@ SelectionCanvas.prototype = {
     resetImage: function() {
         this.ctx.clearRect(0, 0, this.width, this.height);
 
+        this.curTask = null;
         this.curImage = null;
         this.rotated = false;
         this.selections = [];
@@ -87,31 +102,6 @@ SelectionCanvas.prototype = {
         if (slice.width !== 0 && slice.height !== 0) {
             this.selections.push(slice);
         }
-    },
-
-    loadImage: function(file, callback) {
-        var self = this;
-
-        this.resetImage();
-
-        var $img = $("<img>")
-            .attr("src", file)
-            .hide()
-            .on({
-                load: function() {
-                    self.rotated = (self.getAspect(this.width, this.height) !==
-                        self.aspect);
-                    self.drawImage();
-                    callback();
-                },
-
-                error: function() {
-                    callback({error: "Error loading image."});
-                }
-            })
-            .appendTo("body");
-
-        this.curImage = $img[0];
     },
 
     drawImage: function() {

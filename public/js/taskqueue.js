@@ -7,15 +7,14 @@ var TaskManager = {
 
         this.reset();
 
-        this.task = new this._handlers[this.jobType]({
+        this.task = new this._handlers[this.type]({
             el: this.el,
-            // TODO: Get these numbers
-            width: 400,
-            height: 600
+            width: this.$el.width(),
+            height: this.$el.height()
         });
 
-        this.taskQueue = new TaskQueue(options.jobID);
-        this.results = new Results(options.jobID);
+        this.taskQueue = new TaskQueue(options.id);
+        this.results = new Results(options.id);
 
         $(this.results).on({
             saved: function(e, data) {
@@ -26,17 +25,9 @@ var TaskManager = {
         // TODO: Parallelize this.
         this.taskQueue.loadFromCache(function() {
             this.results.loadFromCache(function() {
-                this.taskQueue.update(function() {
-                    this.nextTask();
-                }.bind(this));
+                this.bind();
 
-                $(window).on("online", function() {
-                    this.save();
-                }.bind(this));
-
-                setInterval(function() {
-                    this.save();
-                }.bind(this), 5000);
+                this.taskQueue.update(this.nextTask.bind(this));
 
                 // Immediately attempt to save any pending results.
                 this.save();
@@ -44,9 +35,18 @@ var TaskManager = {
         }.bind(this));
     },
 
+    bind: function() {
+        $(window).on("online", this.save.bind(this));
+        this._interval = setInterval(this.save.bind(this), 5000);
+    },
+
     reset: function() {
-        $(this.el).empty();
-        $("#buttons").empty();
+        if (this._interval) {
+            $(window).off("online", this.save);
+            clearInterval(this._interval);
+        }
+
+        $(this).trigger("resetting");
 
         if (this.task) {
             // TODO: Teardown
@@ -85,7 +85,8 @@ var TaskManager = {
             });
 
             this.results.start(task);
-        });
+            this.task.start(task);
+        }.bind(this));
     },
 
     register: function(name, handler) {
@@ -183,9 +184,7 @@ SyncedDataCache.prototype = {
                 }.bind(this));
             }.bind(this),
 
-            error: function() {
-                this.handleError();
-            }.bind(this)
+            error: this.handleError.bind(this)
         });
     },
 
@@ -240,9 +239,7 @@ SyncedDataCache.prototype = {
                 });
             }.bind(this),
 
-            error: function() {
-                this.handleError();
-            }.bind(this)
+            error: this.handleError.bind(this)
         });
     }
 };
@@ -355,7 +352,5 @@ Results.prototype.finish = function(results) {
 
     this.curTask = this.startTime = undefined;
 
-    this.saveToCache(function() {
-        this.save();
-    }.bind(this));
+    this.saveToCache(this.save.bind(this));
 };
