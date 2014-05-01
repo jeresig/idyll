@@ -24,8 +24,12 @@ var renderJobs = function(jobs) {
 $(document).on("click", "#jobs a", function() {
     $("#jobs").hide();
 
-    var jobID = this.id;
-    TaskManager.init(jobID);
+    TaskManager.init({
+        jobID: this.id,
+        jobType: "image-select",
+        el: $("#module")[0]
+    });
+
     return false;
 });
 

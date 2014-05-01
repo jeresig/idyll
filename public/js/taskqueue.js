@@ -1,7 +1,21 @@
 var TaskManager = {
-    init: function(jobID) {
-        this.taskQueue = new TaskQueue(jobID);
-        this.results = new Results(jobID);
+    _handlers: {},
+
+    init: function(options) {
+        this.el = options.el;
+        this.$el = $(this.el);
+
+        this.reset();
+
+        this.task = new this._handlers[this.jobType]({
+            el: this.el,
+            // TODO: Get these numbers
+            width: 400,
+            height: 600
+        });
+
+        this.taskQueue = new TaskQueue(options.jobID);
+        this.results = new Results(options.jobID);
 
         $(this.results).on({
             saved: function(e, data) {
@@ -28,6 +42,15 @@ var TaskManager = {
                 this.save();
             }.bind(this));
         }.bind(this));
+    },
+
+    reset: function() {
+        $(this.el).empty();
+        $("#buttons").empty();
+
+        if (this.task) {
+            // TODO: Teardown
+        }
     },
 
     done: function(data) {
@@ -63,6 +86,14 @@ var TaskManager = {
 
             this.results.start(task);
         });
+    },
+
+    register: function(name, handler) {
+        this._handlers[name] = handler;
+    },
+
+    addButton: function(label, callback) {
+        // TODO: Append to $("#buttons")
     }
 };
 

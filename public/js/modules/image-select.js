@@ -1,26 +1,15 @@
 var SelectionCanvas = function(options) {
-    // NOTE: Should we be creating this?
-    var canvas = document.createElement("canvas");
-    document.body.appendChild(canvas);
+    this.canvas = document.createElement("canvas");
+    options.el.appendChild(this.canvas);
+    this.ctx = this.canvas.getContext("2d");
 
-    // TODO: Add UI buttons
-
-    this.el = options.el;
-    this.$el = $(options.el);
-
-    this.ctx = this.el.getContext("2d");
-
-    // TODO: Get this from the elem width/height
-    this.width = options.width || window.innerWidth;
-    this.height = options.height || window.innerHeight;
-
-    // TODO: Better handle toolbar height
-    this.height -= 40;
+    this.width = options.width;
+    this.height = options.height;
 
     this.aspect = this.getAspect(this.width, this.height);
 
-    this.el.width = this.width;
-    this.el.height = this.height;
+    this.canvas.width = this.width;
+    this.canvas.height = this.height;
 
     this.points = [];
     this.curImage = null;
@@ -34,19 +23,17 @@ SelectionCanvas.prototype = {
         var self = this;
         var down = false;
 
-        $("#next").on("vclick", function() {
-            selectionCanvas.saveSelection();
-            selectionCanvas.resetSelection();
+        TaskManager.addButton("Next &raquo;", function() {
+            self.saveSelection();
+            self.resetSelection();
         });
 
-        $("#done").on("vclick", function() {
-            fileQueue.markDone();
-            selectionCanvas.saveSelection();
-            selections.finish(selectionCanvas.getSelections());
-            nextImage();
+        TaskManager.addButton("Done &raquo;", function() {
+            self.saveSelection();
+            TaskManager.done(self.getSelections());
         });
 
-        this.$el.on({
+        $(this.canvas).on({
             "vmousedown": function() {
                 down = true;
             },
@@ -257,3 +244,5 @@ SelectionCanvas.prototype = {
         return Math.sqrt(Math.pow(b.x - a.x, 2) + Math.pow(b.y - a.y, 2));
     }
 };
+
+TaskManager.register("image-select", SelectionCanvas);

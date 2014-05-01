@@ -22,10 +22,7 @@
             </div>
             <div id="save-status"></div>
         </div>
-        <div class="buttons">
-            <button id="next">Next &raquo;</button>
-            <button id="done">Done &raquo;</button>
-        </div>
+        <div id="buttons" class="buttons"></div>
     </div>
 </div>
 {% endblock %}
