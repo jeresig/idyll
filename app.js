@@ -116,9 +116,11 @@ app.param("userId", users.user);
 app.get("/", requiresLogin(), routes.index);
 app.get("/mobile", requiresLogin(), routes.mobile);
 app.get("/jobs", requiresLogin(loginJSON), routes.getJobs);
+app.post("/jobs", requiresLogin(loginJSON), routes.createJob);
 app.get("/jobs/:jobId", requiresLogin(loginJSON), routes.taskQueue);
 app.post("/jobs/:jobId", requiresLogin(loginJSON), routes.saveResults);
-app.get("/jobs/:jobId/task/:task", requiresLogin(loginJSON), routes.getTask);
+app.post("/jobs/:jobId/tasks", requiresLogin(loginJSON), routes.createTask);
+app.get("/jobs/:jobId/tasks/:task", requiresLogin(loginJSON), routes.getTask);
 app.get("/offline.appcache", requiresLogin(""), routes.appCache);
 
 app.param("jobId", jobs.job);

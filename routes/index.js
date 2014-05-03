@@ -33,6 +33,25 @@ exports.mobile = function(req, res) {
     res.render("index", {offline: true});
 };
 
+exports.createJob = function(req, res) {
+    var data = {
+        creator: req.params.user,
+        name: req.body.name,
+        description: req.body.description,
+        type: req.body.type,
+        api: req.body.api
+    };
+
+    Job.create(data, function(err, job) {
+        if (err) {
+            res.send(500, err);
+            return;
+        }
+
+        res.send(200, job.toJSON());
+    });
+};
+
 exports.getJobs = function(req, res) {
     Job.find({ended: {$ne: null}}, function(err, jobs) {
         if (err) {
@@ -153,6 +172,24 @@ var cleanTask = function(req, res, task) {
             data: task.data,
             files: files
         });
+    });
+};
+
+exports.createTask = function(req, res) {
+    var data = {
+        creator: req.params.user._id,
+        job: req.params.job._id,
+        data: req.body.data,
+        files: req.body.files
+    };
+
+    Task.create(data, function(err, task) {
+        if (err) {
+            res.send(500, err);
+            return;
+        }
+
+        res.send(200, task.toJSON());
     });
 };
 

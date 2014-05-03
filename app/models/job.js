@@ -3,14 +3,17 @@ var Schema = mongoose.Schema;
 var ObjectId = Schema.Types.ObjectId;
 
 var JobSchema = new Schema({
+    // The creator of the job
+    creator: {type: ObjectId, ref: "User", required: true},
+
     // The name of the job
-    name: String,
+    name: {type: String, required: true},
 
     // A description of the job
     description: String,
 
     // The type of job (e.g. 'crop')
-    type: String,
+    type: {type: String, required: true},
 
     // When the job was started
     started: {type: Date, default: Date.now},
