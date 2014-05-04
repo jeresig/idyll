@@ -97,6 +97,11 @@ exports.session = login;
 exports.create = function(req, res) {
     var user = new User(req.body);
     user.provider = "local";
+
+    if (user.role === "creator") {
+        user.genAuthToken();
+    }
+
     user.save(function(err) {
         if (err) {
             return res.render("users/signup", {

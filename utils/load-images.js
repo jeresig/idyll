@@ -1,58 +1,116 @@
 var fs = require("fs");
 var path = require("path");
+
 var async = require("async");
 var glob = require("glob");
+var request = require("request");
 var imageinfo = require("imageinfo");
 var mongoose = require("mongoose");
+var ArgumentParser = require("argparse").ArgumentParser;
 
-var env = process.env.NODE_ENV || "development";
-var config = require(__dirname + "/../config/config")[env];
-var mongoURL = process.env.MONGO_URL || config.db;
+var argparser = new ArgumentParser({
+    description: "Create an Idyll job and tasks based " +
+        "upon a directory of images.",
+    addHelp: true
+});
 
-mongoose.connect(mongoURL);
+argparser.addArgument(["--job-name"], {
+    help: "The name of the job to create.",
+    required: true,
+    dest: "jobName"
+});
 
-require(__dirname + "/../app/models/image");
-var Image = mongoose.model("Image");
+argparser.addArgument(["--job-desc"], {
+    help: "The description of the job to create.",
+    defaultValue: "",
+    dest: "jobDesc"
+});
 
-console.log("Loading images into DB...");
+argparser.addArgument(["--job-type"], {
+    help: "The type of job to create.",
+    defaultValue: "image-select",
+    required: true,
+    dest: "jobType"
+});
 
-var publicImages = "public/images";
-var scaledPath = publicImages + "/scaled/";
-var scaledDir = path.resolve(__dirname, "..", scaledPath);
-var files = glob.sync(scaledDir + "/**/*.jpg");
+argparser.addArgument(["--image-dir"], {
+    help: "Directory containing all the images you wish to add.",
+    defaultValue: path.resolve("."),
+    dest: "imageDir"
+});
 
-console.log("Directory:", scaledDir);
-console.log("# of files found:", files.length);
+argparser.addArgument(["--url-prefix"], {
+    help: "A URL prefix to use for the image.",
+    dest: "urlPrefix"
+});
 
-async.eachLimit(files, 5, function(file, callback) {
-    var fileName = file.replace(scaledDir + "/", "");
+argparser.addArgument(["--server"], {
+    help: "The location of the Idyll server to add the files to.",
+    defaultValue: "http://localhost:3000",
+    dest: "server"
+});
 
-    Image.findOne({"scaled.file": fileName}, function(err, image) {
-        if (image) {
-            // Already loaded!
-            return callback();
-        }
+var args = argparser.parseArgs();
+
+request.post({
+    url: args.server + "/jobs",
+    json: true
+    body: {
+        name: args.jobName,
+        description: args.jobDesc,
+        type: args.jobType
+    }
+}, function(err, job) {
+    if (err || !job) {
+        console.error("Error creating job.");
+        console.error(err);
+        return;
+    }
+
+    job = JSON.parse(job);
+
+    console.log("Loading images into DB...");
+
+    var files = glob.sync(path.resolve(args.imageDir) + "/*.jpg");
+
+    console.log("Directory:", imageDir);
+    console.log("# of files found:", files.length);
+
+    async.eachLimit(files, 2, function(file, callback) {
+        var fileName = path.basename(file);
 
         fs.readFile(file, function(err, data) {
             if (err) {
                 console.log("Error reading:", file);
-                callback(err);
-            } else {
-                var dimensions = imageinfo(data);
-                Image.create({
-                    scaled: {
-                        file: fileName,
-                        width: dimensions.width,
-                        height: dimensions.height
-                    }
-                }, function(err, image) {
-                    console.log("Saved:", fileName);
-                    callback(err, image);
-                });
+                return callback(err);
             }
+
+            var dimensions = imageinfo(data);
+
+            request.post({
+                url: args.server + "/jobs/" + job._id + "/tasks",
+                json: true,
+                body: {
+                    files: [
+                        {
+                            name: fileName,
+                            type: "image/jpeg",
+                            path: args.urlPrefix ?
+                                args.urlPrefix + fileName : file,
+                            data: {
+                                width: dimensions.width,
+                                height: dimensions.height
+                            }
+                        }
+                    ]
+                }
+            }, function(err) {
+                console.log("Saved:", fileName);
+                callback(err);
+            });
         });
+    }, function(err) {
+        console.log("DONE");
+        process.exit(0);
     });
-}, function(err) {
-    console.log("DONE");
-    process.exit(0);
 });

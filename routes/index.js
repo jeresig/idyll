@@ -7,7 +7,7 @@ var appcache = require("appcache-glob");
 
 var User = mongoose.model("User");
 var Job = mongoose.model("Job");
-var Data = mongoose.model("Data");
+var Task = mongoose.model("Task");
 var Result = mongoose.model("Result");
 
 var taskQueueSize = 200;

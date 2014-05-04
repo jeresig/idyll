@@ -17,7 +17,7 @@ var renderJobs = function(jobs) {
                 "<a href='' id='" + job.id + "'>" + job.name + "</a>" +
                 "<p class='desc'>" + job.description + "</p>" +
             "</job>";
-        }).join("");
+        }).join("")
     );
 };
 

@@ -3,10 +3,11 @@
 {% block title %}Image Cropper{% endblock %}
 
 {% block scripts %}
+<script src="/bower/localforage/dist/localforage.min.js"></script>
 <script src="/bower/jquery/jquery.min.js"></script>
 <script src="/js/jquery.mobile.vmouse.js"></script>
 <script src="/js/taskqueue.js"></script>
-<script src="/js/modules/images-select.js"></script>
+<script src="/js/modules/image-select.js"></script>
 <script src="/js/script.js"></script>
 {% endblock %}
 

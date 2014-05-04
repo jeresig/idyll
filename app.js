@@ -8,11 +8,12 @@ var mongoose = require("mongoose");
 var passport = require("passport");
 var mongoStore = require("connect-mongo")(express);
 var flash = require("connect-flash");
+var dotenv = require("dotenv");
 
-var env = process.env.NODE_ENV || "development";
+dotenv.load();
+
 var pkg = require("./package");
-var config = require("./config/config")[env];
-var mongoURL = process.env.MONGO_URL || config.db;
+var mongoURL = process.env.MONGO_URL;
 
 mongoose.connect(mongoURL);
 
@@ -30,7 +31,7 @@ var users = require("./app/controllers/users");
 var jobs = require("./app/controllers/jobs");
 
 // Bootstrap passport config
-require("./config/passport")(passport, config);
+require("./config/passport")(passport);
 
 var app = express();
 
@@ -64,8 +65,8 @@ app.configure(function() {
 
     // expose pkg and node env to views
     app.use(function (req, res, next) {
-        res.locals.pkg = pkg
-        res.locals.env = env
+        res.locals.pkg = pkg;
+        res.locals.env = process.env;
         next();
     });
     
@@ -80,16 +81,28 @@ app.configure("development", function() {
 });
 
 var requiresLogin = function(responseData) {
-    return function (req, res, next) {
-        if (!req.isAuthenticated()) {
+    return function(req, res, next) {
+        if (req.isAuthenticated()) {
+            return next();
+        }
+
+        passport.authenticate("token", function(err, user, info) {
+            if (err) {
+                return next(err);
+            }
+
+            if (user) {
+                req.user = user;
+                return next();
+            }
+
             if (responseData !== undefined) {
-                return res.send(responseData);
+                res.send(responseData);
             } else {
                 req.session.returnTo = req.originalUrl;
-                return res.redirect("/login");
+                res.redirect("/login");
             }
-        }
-        next();
+        })(req, res, next);
     };
 };
 

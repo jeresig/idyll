@@ -13,6 +13,7 @@ var mongoose = require("mongoose"),
 var UserSchema = new Schema({
     name: { type: String, default: "" },
     email: { type: String, default: "" },
+    role: { type: String, default: "user" },
     hashed_password: { type: String, default: "" },
     salt: { type: String, default: "" },
     authToken: { type: String, default: "" },
@@ -83,6 +84,10 @@ UserSchema.pre("save", function(next) {
  */
 
 UserSchema.methods = {
+    genAuthToken: function() {
+        this.authToken = this.encryptPassword((new Date).getTime());
+        return this.authToken;
+    },
 
     /**
      * Authenticate - check if the passwords are the same

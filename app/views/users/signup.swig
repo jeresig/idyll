@@ -17,6 +17,11 @@
     <label for="password">Password</label>
     <input type="password" name="password"/>
 </div>
+<div>
+    <label for="role">Role:</label>
+    <input type="radio" name="role" value="user" checked/> User
+    <input type="radio" name="role" value="creator"/> Creator
+</div>
 <input type="submit" value="Signup"/>
 </form>
 {% endblock %}
