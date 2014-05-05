@@ -4,6 +4,22 @@ html, body {
     font-family: Helvetica;
 }
 
+.task-panel {
+    position: fixed;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+}
+
+.task-panel.has-toolbar {
+    bottom: 40px;
+}
+
+.task-panel.hidden {
+    display: none;
+}
+
 .toolbar {
     position: fixed;
     left: 0px;
@@ -44,8 +60,4 @@ button#done, button#next {
 
 .pull-left {
     float: left;
-}
-
-img {
-    display: none;
 }

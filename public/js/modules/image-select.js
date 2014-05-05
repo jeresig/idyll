@@ -23,7 +23,7 @@ SelectionCanvas.prototype = {
     start: function(task) {
         this.resetImage();
 
-        var file = task.files[0].file;
+        var file = task.data.files[0].file;
 
         this.curTask = task;
         this.curImage = file;

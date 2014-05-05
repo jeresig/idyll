@@ -5,7 +5,7 @@ $(function() {
     jobs.loadFromCache(function() {
         jobs.update(function() {
             renderJobs(jobs);
-            $("#jobs").show();
+            $("#jobs").removeClass("hidden");
         });
     });
 });
@@ -22,7 +22,8 @@ var renderJobs = function(jobs) {
 };
 
 $(document).on("click", "#jobs a", function() {
-    $("#jobs").hide();
+    $("#jobs").addClass("hidden");
+    $("#content").removeClass("hidden");
 
     TaskManager.init({
         id: this.id,

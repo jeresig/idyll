@@ -81,12 +81,12 @@ exports.getJobs = function(req, res) {
 };
 
 var getAndAssignTasks = function(req, callback) {
-    var jobID = req.params.job;
+    var jobID = req.job._id;
     var user = req.user;
 
     Task.find({
         job: jobID,
-        assigned: user
+        assigned: user._id
     })
     .exec(function(err, tasks) {
         if (err) {

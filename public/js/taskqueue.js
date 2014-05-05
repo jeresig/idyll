@@ -72,16 +72,15 @@ var TaskManager = {
             return;
         }
 
-        this.taskQueue.getTask(taskID, function(task) {
-            task.files.forEach(function(file) {
-                if (typeof file.file === "string") {
-                    // NOTE: For now it's assumed that all files are images
+        this.taskQueue.getTask(taskID, function(err, task) {
+            task.data.files.forEach(function(file) {
+                // NOTE: For now we only do something special for images
+                if (typeof file.file === "string" &&
+                        file.type.indexOf("image") === 0) {
                     var img = new Image();
-                    img.src = "data:" + file.type + "," + file.file;
+                    img.src = "data:" + file.type + ";base64," + file.file;
                     file.file = img;
                 }
-
-                return file;
             });
 
             this.results.start(task);
@@ -266,6 +265,7 @@ var TaskQueue = function(jobID) {
     this.tasks = {};
     this.url = "/jobs/" + jobID;
     this.cacheKey = "task-queue-" + jobID;
+    this.jobID = jobID;
 };
 
 TaskQueue.prototype = new SyncedDataCache();

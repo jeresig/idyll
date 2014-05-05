@@ -12,9 +12,9 @@
 {% endblock %}
 
 {% block content %}
-<div id="jobs"></div>
-<div id="content">
-    <div id="module"></div>
+<div id="jobs" class="task-panel"></div>
+<div id="content" class="task-panel hidden">
+    <div id="module" class="task-panel has-toolbar"></div>
     <div class="toolbar">
         <div class="status pull-left">
             <div>
