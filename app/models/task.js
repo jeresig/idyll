@@ -7,7 +7,7 @@ var TaskSchema = new Schema({
     creator: {type: ObjectId, ref: "User", required: true},
 
     // The job against which the data is being run
-    job: {type: ObjectId, ref: "Job", required: true},
+    job: {type: String, ref: "Job", required: true},
 
     // The user(s) to which the data is currently assigned
     assigned: [{type: ObjectId, ref: "User"}],

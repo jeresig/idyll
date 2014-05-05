@@ -3,6 +3,9 @@ var Schema = mongoose.Schema;
 var ObjectId = Schema.Types.ObjectId;
 
 var JobSchema = new Schema({
+    // Client-specified ID of the job
+    _id: String,
+
     // The creator of the job
     creator: {type: ObjectId, ref: "User", required: true},
 

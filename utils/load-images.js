@@ -14,9 +14,26 @@ var argparser = new ArgumentParser({
     addHelp: true
 });
 
+argparser.addArgument(["--email"], {
+    help: "The email to use to authenticate with Idyll.",
+    defaultValue: process.env.IDYLL_NAME,
+    dest: "email"
+});
+
+argparser.addArgument(["--token"], {
+    help: "The token to use to authenticate with Idyll.",
+    defaultValue: process.env.IDYLL_TOKEN,
+    dest: "token"
+});
+
+argparser.addArgument(["--job-id"], {
+    help: "The ID of the Job to use.",
+    required: true,
+    dest: "jobID"
+});
+
 argparser.addArgument(["--job-name"], {
     help: "The name of the job to create.",
-    required: true,
     dest: "jobName"
 });
 
@@ -29,7 +46,6 @@ argparser.addArgument(["--job-desc"], {
 argparser.addArgument(["--job-type"], {
     help: "The type of job to create.",
     defaultValue: "image-select",
-    required: true,
     dest: "jobType"
 });
 
@@ -52,23 +68,34 @@ argparser.addArgument(["--server"], {
 
 var args = argparser.parseArgs();
 
-request.post({
-    url: args.server + "/jobs",
-    json: true
-    body: {
-        name: args.jobName,
-        description: args.jobDesc,
-        type: args.jobType
-    }
-}, function(err, job) {
-    if (err || !job) {
-        console.error("Error creating job.");
-        console.error(err);
-        return;
-    }
+var createJob = function(callback) {
+    request.post({
+        url: args.server + "/jobs",
+        json: true,
+        body: {
+            email: args.email,
+            token: args.token,
+            data: {
+                id: args.jobID,
+                name: args.jobName,
+                description: args.jobDesc,
+                type: args.jobType
+            }
+        }
+    }, function(err, job) {
+        if (err || !job) {
+            console.error("Error creating job.");
+            console.error(err);
+            return;
+        }
 
-    job = JSON.parse(job);
+        job = JSON.parse(job);
 
+        callback(null, job._id);
+    });
+};
+
+var createTasks = function(err, jobID) {
     console.log("Loading images into DB...");
 
     var files = glob.sync(path.resolve(args.imageDir) + "/*.jpg");
@@ -91,18 +118,22 @@ request.post({
                 url: args.server + "/jobs/" + job._id + "/tasks",
                 json: true,
                 body: {
-                    files: [
-                        {
-                            name: fileName,
-                            type: "image/jpeg",
-                            path: args.urlPrefix ?
-                                args.urlPrefix + fileName : file,
-                            data: {
-                                width: dimensions.width,
-                                height: dimensions.height
+                    email: args.email,
+                    token: args.token,
+                    data: {
+                        files: [
+                            {
+                                name: fileName,
+                                type: "image/jpeg",
+                                path: args.urlPrefix ?
+                                    args.urlPrefix + fileName : file,
+                                data: {
+                                    width: dimensions.width,
+                                    height: dimensions.height
+                                }
                             }
-                        }
-                    ]
+                        ]
+                    }
                 }
             }, function(err) {
                 console.log("Saved:", fileName);
@@ -113,4 +144,10 @@ request.post({
         console.log("DONE");
         process.exit(0);
     });
-});
+};
+
+if (args.jobName) {
+    createJob(createTasks);
+} else {
+    createTasks(null, args.jobID);
+}

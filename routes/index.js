@@ -34,29 +34,38 @@ exports.mobile = function(req, res) {
 };
 
 exports.createJob = function(req, res) {
+    if (!req.body.data) {
+        return res.send(500, {error: "No data specified."});
+    }
+
     var data = {
         creator: req.params.user,
-        name: req.body.name,
-        description: req.body.description,
-        type: req.body.type,
-        api: req.body.api
+        _id: req.body.data.id,
+        name: req.body.data.name,
+        description: req.body.data.description,
+        type: req.body.data.type,
+        api: req.body.data.api
     };
 
-    Job.create(data, function(err, job) {
-        if (err) {
-            res.send(500, err);
-            return;
+    Job.findById(req.body.data.id, function(err, job) {
+        if (job) {
+            return res.send(500, {error: "Job already exists."});
         }
 
-        res.send(200, job.toJSON());
+        Job.create(data, function(err, job) {
+            if (err) {
+                return res.send(500, err);
+            }
+
+            res.send(200, job.toJSON());
+        });
     });
 };
 
 exports.getJobs = function(req, res) {
     Job.find({ended: {$ne: null}}, function(err, jobs) {
         if (err) {
-            res.send(404);
-            return;
+            return res.send(404);
         }
 
         jobs.forEach(function(job) {
@@ -134,8 +143,7 @@ var getAndAssignTask = function(req, callback) {
 exports.taskQueue = function(req, res) {
     if (req.job.api && req.job.api.getTasks) {
         // TODO: Pass in user session
-        request(req.job.api.getTasks).pipe(res);
-        return;
+        return request(req.job.api.getTasks).pipe(res);
     }
 
     getAndAssignTasks(req, function(err, tasks) {
@@ -176,17 +184,20 @@ var cleanTask = function(req, res, task) {
 };
 
 exports.createTask = function(req, res) {
+    if (!req.body.data) {
+        return res.send(500, {error: "No data specified."});
+    }
+
     var data = {
         creator: req.params.user._id,
         job: req.params.job._id,
-        data: req.body.data,
-        files: req.body.files
+        data: req.body.data.data,
+        files: req.body.data.files
     };
 
     Task.create(data, function(err, task) {
         if (err) {
-            res.send(500, err);
-            return;
+            return res.send(500, err);
         }
 
         res.send(200, task.toJSON());
@@ -200,8 +211,7 @@ exports.getTask = function(req, res) {
         // TODO: Pass in Task ID and user session
         request(req.job.api.getTask, function(err, task) {
             if (err || !task) {
-                res.send(404);
-                return;
+                return res.send(404);
             }
 
             cleanTask(req, res, JSON.parse(task));
@@ -211,8 +221,7 @@ exports.getTask = function(req, res) {
 
     Task.findOne({_id: id}, function(err, task) {
         if (err || !task) {
-            res.send(404);
-            return;
+            return res.send(404);
         }
 
         cleanTask(req, res, task);
@@ -241,8 +250,7 @@ exports.saveResults = function(req, res) {
         // TODO: Pass in Task ID and user session
         request.post(req.job.api.saveResult, data, function(err) {
             if (err) {
-                res.send(404);
-                return;
+                return res.send(404);
             }
 
             res.send(200);

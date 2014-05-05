@@ -4,10 +4,10 @@ var ObjectId = Schema.Types.ObjectId;
 
 var ResultSchema = new Schema({
     // The id for the data which we the user processed
-    task: {type: ObjectId, ref: "Task"},
+    task: {type: ObjectId, ref: "Task", required: true},
 
     // The user who processed the data
-    user: {type: ObjectId, ref: "User"},
+    user: {type: ObjectId, ref: "User", required: true},
 
     // When the user started processing the data (client-supplied)
     started: Date,
