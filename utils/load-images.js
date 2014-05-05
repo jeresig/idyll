@@ -82,16 +82,14 @@ var createJob = function(callback) {
                 type: args.jobType
             }
         }
-    }, function(err, job) {
-        if (err || !job) {
+    }, function(err, res, job) {
+        if (err || !job || job.error) {
             console.error("Error creating job.");
-            console.error(err);
+            console.error(err || job.error);
             return;
         }
 
-        job = JSON.parse(job);
-
-        callback(null, job._id);
+        callback(null, args.jobID);
     });
 };
 
@@ -100,7 +98,7 @@ var createTasks = function(err, jobID) {
 
     var files = glob.sync(path.resolve(args.imageDir) + "/*.jpg");
 
-    console.log("Directory:", imageDir);
+    console.log("Directory:", args.imageDir);
     console.log("# of files found:", files.length);
 
     async.eachLimit(files, 2, function(file, callback) {
@@ -115,7 +113,7 @@ var createTasks = function(err, jobID) {
             var dimensions = imageinfo(data);
 
             request.post({
-                url: args.server + "/jobs/" + job._id + "/tasks",
+                url: args.server + "/jobs/" + jobID + "/tasks",
                 json: true,
                 body: {
                     email: args.email,
@@ -136,7 +134,12 @@ var createTasks = function(err, jobID) {
                     }
                 }
             }, function(err) {
-                console.log("Saved:", fileName);
+                if (err) {
+                    console.error("Error saving:", fileName);
+                    console.error(err);
+                } else {
+                    console.log("Saved:", fileName);
+                }
                 callback(err);
             });
         });

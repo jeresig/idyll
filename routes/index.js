@@ -39,7 +39,7 @@ exports.createJob = function(req, res) {
     }
 
     var data = {
-        creator: req.params.user,
+        creator: req.user,
         _id: req.body.data.id,
         name: req.body.data.name,
         description: req.body.data.description,
@@ -54,7 +54,7 @@ exports.createJob = function(req, res) {
 
         Job.create(data, function(err, job) {
             if (err) {
-                return res.send(500, err);
+                return res.send(500, err.toJSON());
             }
 
             res.send(200, job.toJSON());
@@ -189,8 +189,8 @@ exports.createTask = function(req, res) {
     }
 
     var data = {
-        creator: req.params.user._id,
-        job: req.params.job._id,
+        creator: req.user._id,
+        job: req.job._id,
         data: req.body.data.data,
         files: req.body.data.files
     };
