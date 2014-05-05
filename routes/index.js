@@ -63,14 +63,17 @@ exports.createJob = function(req, res) {
 };
 
 exports.getJobs = function(req, res) {
-    Job.find({ended: {$ne: null}}, function(err, jobs) {
+    Job.find({ended: null}, function(err, jobs) {
         if (err) {
             return res.send(404);
         }
 
-        jobs.forEach(function(job) {
+        jobs = jobs.map(function(job) {
+            job = job.toJSON();
             job.id = job._id;
             delete job._id;
+            delete job.__v;
+            return job;
         });
 
         res.send(200, jobs);
