@@ -10,7 +10,8 @@ var TaskManager = {
         this.task = new this._handlers[options.type]({
             el: this.el,
             width: this.$el.width(),
-            height: this.$el.height()
+            height: this.$el.height(),
+            type: options.type
         });
 
         this.taskQueue = new TaskQueue(options.id);
