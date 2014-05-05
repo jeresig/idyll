@@ -7,7 +7,7 @@ var TaskManager = {
 
         this.reset();
 
-        this.task = new this._handlers[this.type]({
+        this.task = new this._handlers[options.type]({
             el: this.el,
             width: this.$el.width(),
             height: this.$el.height()
@@ -120,7 +120,7 @@ SyncedDataCache.prototype = {
     },
 
     saveToCache: function(callback) {
-        localforage.saveItem(this.cacheKey, this.data, callback);
+        localforage.setItem(this.cacheKey, this.data, callback);
     },
 
     removeFromCache: function(callback) {
@@ -184,7 +184,9 @@ SyncedDataCache.prototype = {
                 }.bind(this));
             }.bind(this),
 
-            error: this.handleError.bind(this)
+            error: function() {
+                this.handleError(callback);
+            }.bind(this)
         });
     },
 
@@ -239,12 +241,15 @@ SyncedDataCache.prototype = {
                 });
             }.bind(this),
 
-            error: this.handleError.bind(this)
+            error: function() {
+                this.handleError();
+            }.bind(this)
         });
     }
 };
 
 var Jobs = function() {
+    this.url = "/jobs";
     this.cacheKey = "jobs-data";
 };
 
@@ -266,7 +271,7 @@ var TaskQueue = function(jobID) {
 TaskQueue.prototype = new SyncedDataCache();
 
 TaskQueue.prototype.processData = function(data) {
-    return data.map(function(task) {
+    return data.tasks.map(function(task) {
         return {
             id: task,
             done: false

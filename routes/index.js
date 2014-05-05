@@ -80,7 +80,7 @@ exports.getJobs = function(req, res) {
     });
 };
 
-var getAndAssignTask = function(req, callback) {
+var getAndAssignTasks = function(req, callback) {
     var jobID = req.params.job;
     var user = req.user;
 
