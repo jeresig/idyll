@@ -35,20 +35,21 @@ html, body {
     right: 0;
 }
 
-button#done, button#next {
+.toolbar button {
     -webkit-appearance: none;
     font-size: 15px;
     height: 40px;
     background: #FFF;
     border: none;
     margin-right: 10px;
+    float: right;
 }
 
-.status {
+.toolbar .status {
     margin-left: 10px;
 }
 
-.status div {
+.toolbar .status div {
     font-size: 14px;
     line-height: 20px;
     color: #666;

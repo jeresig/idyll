@@ -247,7 +247,7 @@ exports.appCache = function(req, res) {
 
 exports.saveResults = function(req, res) {
     var data = req.body;
-    var ids = Object.keys(data.results);
+    var ids = Object.keys(data);
 
     if (req.job.api && req.job.api.saveResult) {
         // TODO: Pass in Task ID and user session
@@ -267,7 +267,7 @@ exports.saveResults = function(req, res) {
                 return callback(err);
             }
 
-            var result = new Result(data.results[id]);
+            var result = new Result(data[id]);
             result.user = req.user;
             result.task = task;
             result.save(function(err) {

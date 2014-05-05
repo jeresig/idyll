@@ -10,6 +10,13 @@ $(function() {
     });
 });
 
+TaskManager.addButton = function(label, callback) {
+    $("<button>")
+        .html(label)
+        .on("click", callback)
+        .appendTo("#buttons")
+};
+
 var renderJobs = function(jobs) {
     $("#jobs").html(
         jobs.data.map(function(job) {

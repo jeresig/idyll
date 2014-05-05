@@ -37,14 +37,14 @@ SelectionCanvas.prototype = {
         var self = this;
         var down = false;
 
-        TaskManager.addButton("Next &raquo;", function() {
-            self.saveSelection();
-            self.resetSelection();
-        });
-
         TaskManager.addButton("Done &raquo;", function() {
             self.saveSelection();
             TaskManager.done(self.getSelections());
+        });
+
+        TaskManager.addButton("Next &raquo;", function() {
+            self.saveSelection();
+            self.resetSelection();
         });
 
         $(this.canvas).on({

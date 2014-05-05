@@ -54,9 +54,10 @@ var TaskManager = {
     },
 
     done: function(data) {
-        this.taskQueue.markDone();
-        this.results.finish(data);
-        this.nextTask();
+        this.taskQueue.markDone(function() {
+            this.results.finish(data);
+            this.nextTask();
+        }.bind(this));
     },
 
     save: function() {
@@ -83,7 +84,7 @@ var TaskManager = {
                 }
             });
 
-            this.results.start(task);
+            this.results.start(taskID);
             this.task.start(task);
         }.bind(this));
     },
@@ -93,7 +94,7 @@ var TaskManager = {
     },
 
     addButton: function(label, callback) {
-        // TODO: Append to $("#buttons")
+        // NOTE: This must be implemented by the UI layer
     }
 };
 
@@ -113,7 +114,7 @@ var SyncedDataCache = function() {
 SyncedDataCache.prototype = {
     loadFromCache: function(callback) {
         localforage.getItem(this.cacheKey, function(data) {
-            this.data = data;
+            this.data = data || this.data;
             callback();
         }.bind(this));
     },
@@ -197,7 +198,7 @@ SyncedDataCache.prototype = {
         var toSave = {};
         var hasData = false;
 
-        for (var prop in this.toSave) {
+        for (var prop in this.data) {
             hasData = true;
             toSave[prop] = this.data[prop];
         }
@@ -237,7 +238,7 @@ SyncedDataCache.prototype = {
                         saved: toSave,
                         result: data
                     });
-                });
+                }.bind(this));
             }.bind(this),
 
             error: function() {
@@ -321,9 +322,9 @@ TaskQueue.prototype.latestTaskID = function() {
 };
 
 TaskQueue.prototype.markDone = function(callback) {
-    var taskId = this.latestTaskID();
+    var taskID = this.latestTaskID();
 
-    if (taskId) {
+    if (taskID) {
         this.data.forEach(function(task) {
             if (task.id === taskID) {
                 task.done = true;
@@ -337,6 +338,7 @@ TaskQueue.prototype.markDone = function(callback) {
 };
 
 var Results = function(jobID) {
+    this.data = {};
     this.url = "/jobs/" + jobID;
     this.cacheKey = "result-data-" + jobID;
 };
