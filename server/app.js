@@ -3,10 +3,7 @@ var path = require("path");
 var fs = require("fs");
 
 var express = require("express");
-var swig = require("swig");
 var mongoose = require("mongoose");
-var mongoStore = require("connect-mongo")(express);
-var flash = require("connect-flash");
 var dotenv = require("dotenv");
 
 dotenv.load();
@@ -33,27 +30,9 @@ var app = express();
 
 app.configure(function() {
     app.set("port", process.env.PORT || 3000);
-    swig.setDefaults({ cache: false });
-    app.engine("swig", swig.renderFile);
-    app.set("views", __dirname + "/app/views");
-    app.set("view engine", "swig");
-    app.set("view cache", false);
 
     app.use(express.bodyParser());
     app.use(express.methodOverride());
-
-    // cookieParser should be above session
-    app.use(express.cookieParser());
-    app.use(express.session({
-        secret: pkg.name,
-        store: new mongoStore({
-            url: mongoURL,
-            collection: "sessions"
-        })
-    }));
-
-    // Flash messages
-    app.use(flash());
 
     // expose pkg and node env to views
     app.use(function (req, res, next) {
@@ -61,8 +40,7 @@ app.configure(function() {
         res.locals.env = process.env;
         next();
     });
-    
-    app.use(express.favicon());
+
     app.use(express.logger("dev"));
     app.use(app.router);
     app.use(express.static(path.join(__dirname, "public")));

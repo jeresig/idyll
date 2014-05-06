@@ -5,15 +5,11 @@
   "main": "app.js",
   "dependencies": {
     "express": "~3.0.3",
-    "swig": "~1.2.2",
     "mongoose": "~3.8.2",
-    "gm": "~1.14.1",
     "async": "~0.2.9",
     "imageinfo": "~1.0.4",
     "glob": "~3.2.7",
     "appcache-glob": "~0.0.2",
-    "connect-mongo": "~0.4.0",
-    "connect-flash": "~0.1.1",
     "request": "^2.34.0",
     "dotenv": "^0.2.8",
     "argparse": "^0.1.15"
