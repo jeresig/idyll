@@ -7,7 +7,7 @@ var ResultSchema = new Schema({
     task: {type: ObjectId, ref: "Task", required: true},
 
     // The user who processed the data
-    user: {type: ObjectId, ref: "User", required: true},
+    user: {type: String, ref: "User", required: true},
 
     // When the user started processing the data (client-supplied)
     started: Date,

@@ -4,7 +4,7 @@ var ObjectId = Schema.Types.ObjectId;
 
 var TaskSchema = new Schema({
     // The creator of the job
-    creator: {type: ObjectId, ref: "User", required: true},
+    creator: {type: String, ref: "User", required: true},
 
     // The job against which the data is being run
     job: {type: String, ref: "Job", required: true},

@@ -7,7 +7,7 @@ var JobSchema = new Schema({
     _id: String,
 
     // The creator of the job
-    creator: {type: ObjectId, ref: "User", required: true},
+    creator: {type: String, ref: "User", required: true},
 
     // The name of the job
     name: {type: String, required: true},
@@ -25,9 +25,6 @@ var JobSchema = new Schema({
     ended: Date,
 
     api: {
-        // Oauth2 endpoint for authenticating the user
-        auth: String,
-
         // API endpoint for getting an array of IDs for the user
         // to complete.
         getTasks: String,

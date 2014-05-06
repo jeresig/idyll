@@ -14,10 +14,10 @@ var argparser = new ArgumentParser({
     addHelp: true
 });
 
-argparser.addArgument(["--email"], {
-    help: "The email to use to authenticate with Idyll.",
-    defaultValue: process.env.IDYLL_NAME,
-    dest: "email"
+argparser.addArgument(["--user"], {
+    help: "The user ID to use to authenticate with Idyll.",
+    defaultValue: process.env.IDYLL_USER,
+    dest: "user"
 });
 
 argparser.addArgument(["--token"], {
@@ -73,7 +73,7 @@ var createJob = function(callback) {
         url: args.server + "/jobs",
         json: true,
         body: {
-            email: args.email,
+            user: args.user,
             token: args.token,
             data: {
                 id: args.jobID,
@@ -116,7 +116,7 @@ var createTasks = function(err, jobID) {
                 url: args.server + "/jobs/" + jobID + "/tasks",
                 json: true,
                 body: {
-                    email: args.email,
+                    user: args.user,
                     token: args.token,
                     data: {
                         files: [

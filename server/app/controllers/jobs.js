@@ -2,7 +2,7 @@ var mongoose = require("mongoose");
 var Job = mongoose.model("Job");
 
 exports.job = function(req, res, next, id) {
-    Job.findOne({ _id : id }).exec(function(err, job) {
+    Job.findById(id).exec(function(err, job) {
         if (err) {
             return next(err);
         }

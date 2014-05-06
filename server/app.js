@@ -5,7 +5,6 @@ var fs = require("fs");
 var express = require("express");
 var swig = require("swig");
 var mongoose = require("mongoose");
-var passport = require("passport");
 var mongoStore = require("connect-mongo")(express);
 var flash = require("connect-flash");
 var dotenv = require("dotenv");
@@ -30,9 +29,6 @@ var routes = require("./routes");
 var users = require("./app/controllers/users");
 var jobs = require("./app/controllers/jobs");
 
-// Bootstrap passport config
-require("./config/passport")(passport);
-
 var app = express();
 
 app.configure(function() {
@@ -56,10 +52,6 @@ app.configure(function() {
         })
     }));
 
-    // Passport session
-    app.use(passport.initialize());
-    app.use(passport.session());
-
     // Flash messages
     app.use(flash());
 
@@ -80,61 +72,22 @@ app.configure("development", function() {
     app.use(express.errorHandler());
 });
 
-var requiresLogin = function(responseData) {
-    return function(req, res, next) {
-        if (req.isAuthenticated()) {
-            return next();
-        }
-
-        passport.authenticate("token", function(err, user, info) {
-            if (err) {
-                return next(err);
-            }
-
-            if (user) {
-                req.user = user;
-                return next();
-            }
-
-            if (responseData !== undefined) {
-                res.send(responseData);
-            } else {
-                req.session.returnTo = req.originalUrl;
-                res.redirect("/login");
-            }
-        })(req, res, next);
-    };
-};
-
-var passportOptions = {
-    failureFlash: "Invalid email or password.",
-    failureRedirect: "/login"
-};
-
-var loginJSON = {
-    error: "Login required.",
-    login: true
-};
-
-app.get("/login", users.login);
-app.get("/signup", users.signup);
-app.get("/logout", users.logout);
-app.post("/users", users.create);
-app.post("/users/session", passport.authenticate("local", passportOptions),
-    users.session);
-app.get("/users/:userId", users.show);
-
 app.param("userId", users.user);
 
-app.get("/", requiresLogin(), routes.index);
-app.get("/mobile", requiresLogin(), routes.mobile);
-app.get("/jobs", requiresLogin(loginJSON), routes.getJobs);
-app.post("/jobs", requiresLogin(loginJSON), routes.createJob);
-app.get("/jobs/:jobId", requiresLogin(loginJSON), routes.taskQueue);
-app.post("/jobs/:jobId", requiresLogin(loginJSON), routes.saveResults);
-app.post("/jobs/:jobId/tasks", requiresLogin(loginJSON), routes.createTask);
-app.get("/jobs/:jobId/tasks/:task", requiresLogin(loginJSON), routes.getTask);
-app.get("/offline.appcache", requiresLogin(""), routes.appCache);
+// TODO: Move these to be static files somewhere
+app.get("/", routes.index);
+app.get("/offline.appcache", routes.appCache);
+
+// Dynamic API used by clients
+app.get("/jobs", routes.getJobs);
+app.get("/jobs/:jobId", users.auth(), routes.taskQueue);
+app.post("/jobs/:jobId", users.auth(), routes.saveResults);
+app.get("/jobs/:jobId/tasks/:task", users.auth(), routes.getTask);
+app.post("/user/connect", users.auth(), users.connect);
+
+// API used by Job/Task creators
+app.post("/jobs", users.auth(true), routes.createJob);
+app.post("/jobs/:jobId/tasks", users.auth(true), routes.createTask);
 
 app.param("jobId", jobs.job);
 
