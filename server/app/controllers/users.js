@@ -18,14 +18,14 @@ exports.connect = function(req, res) {
 exports.auth = function(requiresToken) {
     return function(req, res, next) {
         var query = {
-            _id: req.query.user || req.body.user;
+            _id: req.query.user || req.body.user
         };
 
         if (requiresToken) {
             query.authToken = req.query.token || req.body.token;
         }
 
-        User.findOne(iquery).exec(function(err, user) {
+        User.findOne(query).exec(function(err, user) {
             if (err) {
                 return next(err);
             }

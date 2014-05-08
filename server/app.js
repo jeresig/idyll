@@ -1,5 +1,3 @@
-var http = require("http");
-var path = require("path");
 var fs = require("fs");
 
 var express = require("express");
@@ -8,10 +6,7 @@ var dotenv = require("dotenv");
 
 dotenv.load();
 
-var pkg = require("./package");
-var mongoURL = process.env.MONGO_URL;
-
-mongoose.connect(mongoURL);
+mongoose.connect(process.env.MONGO_URL);
 
 // Load models
 var modelsDir = __dirname + "/app/models";
@@ -41,8 +36,6 @@ app.configure(function() {
 app.configure("development", function() {
     app.use(express.errorHandler());
 });
-
-app.param("userId", users.user);
 
 // Dynamic API used by clients
 app.get("/jobs", routes.getJobs);
