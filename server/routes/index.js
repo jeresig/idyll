@@ -3,7 +3,6 @@ var fs = require("fs");
 var async = require("async");
 var request = require("request");
 var mongoose = require("mongoose");
-var appcache = require("appcache-glob");
 
 var User = mongoose.model("User");
 var Job = mongoose.model("Job");
@@ -11,27 +10,6 @@ var Task = mongoose.model("Task");
 var Result = mongoose.model("Result");
 
 var taskQueueSize = 200;
-
-// Load Appcache
-var baseAppCache = appcache
-    .create({cwd: __dirname + "/../public"})
-    .addCache([
-        "/bower/jquery/jquery.min.js",
-        "/bower/bootstrap/dist/css/bootstrap.min.css",
-        "/bower/bootstrap/dist/fonts/*",
-        "/js/*",
-        "/css/*",
-        "/mobile"
-    ])
-    .addNetwork(["/", "/selections", "/queue"]);
-
-exports.index = function(req, res) {
-    res.render("index");
-};
-
-exports.mobile = function(req, res) {
-    res.render("index", {offline: true});
-};
 
 exports.createJob = function(req, res) {
     if (!req.body.data) {
@@ -229,10 +207,6 @@ exports.getTask = function(req, res) {
 
         cleanTask(req, res, task);
     });
-};
-
-exports.appCache = function(req, res) {
-    baseAppCache.pipe(res);
 };
 
 /* Task result format:

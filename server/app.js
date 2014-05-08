@@ -34,16 +34,8 @@ app.configure(function() {
     app.use(express.bodyParser());
     app.use(express.methodOverride());
 
-    // expose pkg and node env to views
-    app.use(function (req, res, next) {
-        res.locals.pkg = pkg;
-        res.locals.env = process.env;
-        next();
-    });
-
     app.use(express.logger("dev"));
     app.use(app.router);
-    app.use(express.static(path.join(__dirname, "public")));
 });
 
 app.configure("development", function() {
@@ -51,10 +43,6 @@ app.configure("development", function() {
 });
 
 app.param("userId", users.user);
-
-// TODO: Move these to be static files somewhere
-app.get("/", routes.index);
-app.get("/offline.appcache", routes.appCache);
 
 // Dynamic API used by clients
 app.get("/jobs", routes.getJobs);
