@@ -166,7 +166,7 @@ SyncedDataCache.prototype = {
         // Always attempt to get the latest queue if we're online.
         $.ajax({
             type: "GET",
-            url: this.url,
+            url: window.IDYLL_SERVER + this.url,
             dataType: "json",
             timeout: 8000,
 
@@ -213,7 +213,7 @@ SyncedDataCache.prototype = {
 
         $.ajax({
             type: "POST",
-            url: this.url,
+            url: window.IDYLL_SERVER + this.url,
             contentType: "application/json",
             dataType: "json",
             data: JSON.stringify(toSave),
