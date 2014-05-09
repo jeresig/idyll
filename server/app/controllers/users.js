@@ -18,7 +18,8 @@ exports.connect = function(req, res) {
 exports.auth = function(requiresToken) {
     return function(req, res, next) {
         var query = {
-            _id: req.query.user || req.body.user
+            _id: req.query && req.query.user ||
+                req.body && req.body.user
         };
 
         if (requiresToken) {
