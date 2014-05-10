@@ -17,6 +17,7 @@
   "dependencies": {
     "bootstrap": "~3.0.3",
     "jquery": "~2.0.3",
-    "localforage": "~0.6.2"
+    "localforage": "~0.6.2",
+    "oauth-js": "~0.2.0"
   }
 }
