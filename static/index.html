@@ -6,9 +6,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
     <meta name="viewport" content="target-densitydpi=device-dpi, initial-scale=1.0, user-scalable=no"/>
     <link rel="stylesheet" href="css/style.css"/>
-    <script>
-    var IDYLL_SERVER = "http://localhost:3000";
-    </script>
     <script src="bower/jquery/jquery.min.js"></script>
     <script src="bower/oauth-js/dist/oauth.min.js"></script>
     <script src="bower/localforage/dist/localforage.min.js"></script>
@@ -18,7 +15,10 @@
     <script src="js/script.js"></script>
 </head>
 <body>
-    <div id="jobs" class="task-panel"></div>
+    <div id="login" class="task-panel">
+        <button class="login fb">Login with Facebook</button>
+    </div>
+    <div id="jobs" class="task-panel hidden"></div>
     <div id="content" class="task-panel hidden">
         <div id="module" class="task-panel has-toolbar"></div>
         <div class="toolbar">

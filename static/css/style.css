@@ -1,7 +1,8 @@
 html, body {
     margin: 0;
     padding: 0;
-    font-family: Helvetica;
+    font-family: Helvetica, Arial;
+    font-size: 15px;
 }
 
 .task-panel {
@@ -61,4 +62,16 @@ html, body {
 
 .pull-left {
     float: left;
+}
+
+.login {
+    width: 100%;
+    max-width: 400px;
+    padding: 10px;
+    font-size: 30px;
+}
+
+.login.fb {
+    background: #3B5998;
+    color: #FFF;
 }

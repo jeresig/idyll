@@ -1,20 +1,26 @@
+OAuth.initialize(IDYLL_CONFIG.OAUTHIO_KEY);
 
-$(function() {
-    var jobs = new Jobs();
+var curUser;
 
-    jobs.loadFromCache(function() {
-        jobs.update(function() {
-            renderJobs(jobs);
-            $("#jobs").removeClass("hidden");
-        });
-    });
-});
+// TODO: Check localforage and if user data is saved
+// skip directly to loadJobs
 
 TaskManager.addButton = function(label, callback) {
     $("<button>")
         .html(label)
         .on("click", callback)
         .appendTo("#buttons")
+};
+
+var loadJobs = function() {
+    var jobs = new Jobs();
+
+    jobs.loadFromCache(function() {
+        jobs.update(function() {
+            renderJobs(jobs);
+            $("#jobs").switchPanel();
+        });
+    });
 };
 
 var renderJobs = function(jobs) {
@@ -28,14 +34,42 @@ var renderJobs = function(jobs) {
     );
 };
 
+jQuery.fn.switchPanel = function() {
+    this.siblings().addClass("hidden");
+    return this.removeClass("hidden");
+};
+
+$(document).on("click", ".login.fb", function() {
+    OAuth.popup("facebook", {cache: true}, function(err, result) {
+        if (err || !result) {
+            // TODO: Handle this.
+            console.error(err);
+            return;
+        }
+
+        result.get({
+            url: "/me",
+            success: function(data) {
+                curUser = data;
+                curUser.provier = "fb";
+                // Save user details in localforage
+                loadJobs();
+            },
+            error: function() {
+                // TODO: Handle this.
+            }
+        })
+    });
+});
+
 $(document).on("click", "#jobs a", function() {
-    $("#jobs").addClass("hidden");
-    $("#content").removeClass("hidden");
+    $("#content").switchPanel();
 
     TaskManager.init({
         id: this.id,
         type: "image-select",
-        el: $("#module")[0]
+        el: $("#module")[0],
+        user: curUser
     });
 
     return false;
