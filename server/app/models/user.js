@@ -11,8 +11,8 @@ var UserSchema = new Schema({
     // Data about the user from the OAuth'd service
     data: Schema.Types.Mixed,
 
-    // The ID of the service through which the user is authenticated
-    service: String,
+    // The ID of the OAuth provider through which the user is authenticated
+    provider: String,
 
     // A token to be used in future API requests
     authToken: String,
@@ -23,8 +23,9 @@ var UserSchema = new Schema({
 
 UserSchema.methods = {
     genAuthToken: function() {
-        this.authToken = crypto.createHmac("sha1")
-            .update((new Date).getTime()).digest("hex");
+        this.authToken = crypto.createHash("sha1")
+            .update(this._id + (new Date).getTime().toString(), "utf8")
+            .digest("hex");
         return this.authToken;
     }
 };

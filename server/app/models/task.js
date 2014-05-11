@@ -10,7 +10,7 @@ var TaskSchema = new Schema({
     job: {type: String, ref: "Job", required: true},
 
     // The user(s) to which the data is currently assigned
-    assigned: [{type: ObjectId, ref: "User"}],
+    assigned: [{type: String, ref: "User"}],
 
     // The results of the user actions against the data
     results: [{type: ObjectId, ref: "Result"}],

@@ -30,23 +30,23 @@ server.use(restify.bodyParser());
 server.use(restify.queryParser());
 server.use(restify.gzipResponse());
 
+server.use(function(req, res, next) {
+    if (req.params && req.params.jobId) {
+        return jobs.job(req, res, next, req.params.jobId);
+    }
+    next();
+});
+
 // Dynamic API used by clients
 server.get("/jobs", routes.getJobs);
 server.get("/jobs/:jobId", users.auth(), routes.taskQueue);
 server.post("/jobs/:jobId", users.auth(), routes.saveResults);
 server.get("/jobs/:jobId/tasks/:task", users.auth(), routes.getTask);
-server.post("/user/connect", users.auth(), users.connect);
+server.post("/user/connect", users.connect);
 
 // API used by Job/Task creators
-server.post("/jobs", users.auth(true), routes.createJob);
-server.post("/jobs/:jobId/tasks", users.auth(true), routes.createTask);
-
-server.use(function(req, res, next) {
-    if (req.param.jobId) {
-        return jobs.job(req, res, next, req.param.jobId);
-    }
-    next();
-});
+server.post("/jobs", users.auth(), routes.createJob);
+server.post("/jobs/:jobId/tasks", users.auth(), routes.createTask);
 
 server.listen(process.env.PORT || 3000);
 

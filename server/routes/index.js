@@ -220,7 +220,7 @@ exports.getTask = function(req, res) {
  */
 
 exports.saveResults = function(req, res) {
-    var data = req.body;
+    var data = req.body.data;
     var ids = Object.keys(data);
 
     if (req.job.api && req.job.api.saveResult) {

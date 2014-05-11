@@ -128,14 +128,10 @@ SyncedDataCache.prototype = {
         localforage.removeItem(this.cacheKey, callback);
     },
 
-    loginRedirect: function() {
-        window.location.href = "/login?returnTo=" +
-            encodeURIComponent(window.location.pathname);
-    },
-
     handleError: function(data, callback) {
         if (data && data.login) {
-            this.loginRedirect();
+            // TODO: Handle login error.
+            //this.loginRedirect();
         } else {
             $(this).trigger("error");
             if (callback) {
@@ -167,6 +163,10 @@ SyncedDataCache.prototype = {
         $.ajax({
             type: "GET",
             url: IDYLL_CONFIG.SERVER + this.url,
+            data: TaskManager.user ? {
+                user: TaskManager.user.data.id,
+                token: TaskManager.user.data.authToken
+            } : {},
             dataType: "json",
             timeout: 8000,
 
@@ -189,64 +189,79 @@ SyncedDataCache.prototype = {
                 this.handleError(callback);
             }.bind(this)
         });
-    },
+    }
+};
 
-    save: function() {
-        if (this.saving || !navigator.onLine) {
-            return;
+var User = function() {
+    this.url = "/user/connect";
+    this.cacheKey = "user-data";
+};
+
+User.prototype = new SyncedDataCache();
+
+User.prototype.auth = function(provider, callback) {
+    this.providers[provider](function(err, data) {
+        if (err || !data) {
+            return callback(err);
         }
 
-        var toSave = {};
-        var hasData = false;
+        this.data = {
+            id: "facebook/" + data.id,
+            provider: "facebook",
+            data: data
+        };
 
-        for (var prop in this.data) {
-            hasData = true;
-            toSave[prop] = this.data[prop];
-        }
+        this.save(callback);
+    }.bind(this));
+};
 
-        if (!hasData) {
-            return;
-        }
+User.prototype.providers = {
+    facebook: function(callback) {
+        OAuth.popup("facebook", {cache: true}, function(err, result) {
+            if (err || !result) {
+                return callback(err);
+            }
 
-        this.saving = true;
-        $(this).trigger("saving");
-
-        $.ajax({
-            type: "POST",
-            url: IDYLL_CONFIG.SERVER + this.url,
-            contentType: "application/json",
-            dataType: "json",
-            data: JSON.stringify(toSave),
-            timeout: 8000,
-
-            complete: function() {
-                this.saving = false;
-            }.bind(this),
-
-            success: function(data) {
-                if (data.error) {
-                    this.handleError(data);
-                    return;
-                }
-
-                // Remove the saved items from the queue
-                for (var prop in toSave) {
-                    delete this.data[prop];
-                }
-
-                this.saveToCache(function() {
-                    $(this).trigger("saved", {
-                        saved: toSave,
-                        result: data
-                    });
-                }.bind(this));
-            }.bind(this),
-
-            error: function() {
-                this.handleError();
-            }.bind(this)
+            result.get({
+                url: "/me",
+                success: function(data) {
+                    callback(null, data);
+                },
+                error: callback
+            })
         });
     }
+};
+
+User.prototype.save = function(callback) {
+    $.ajax({
+        type: "POST",
+        url: IDYLL_CONFIG.SERVER + this.url,
+        contentType: "application/json",
+        dataType: "json",
+        data: JSON.stringify({
+            user: TaskManager.user.data.id,
+            token: TaskManager.user.data.authToken,
+            data: this.data
+        }),
+        timeout: 8000,
+
+        success: function(data) {
+            if (data && data.error) {
+                this.handleError(data);
+                return;
+            }
+
+            // Re-set the data to get the authToken
+            this.data = data;
+
+            this.saveToCache(function() {
+                callback();
+            });
+        }.bind(this),
+
+        error: callback
+    });
 };
 
 var Jobs = function() {
@@ -361,4 +376,65 @@ Results.prototype.finish = function(results) {
     this.curTask = this.startTime = undefined;
 
     this.saveToCache(this.save.bind(this));
+};
+
+Results.prototype.save = function() {
+    if (this.saving || !navigator.onLine) {
+        return;
+    }
+
+    var toSave = {};
+    var hasData = false;
+
+    for (var prop in this.data) {
+        hasData = true;
+        toSave[prop] = this.data[prop];
+    }
+
+    if (!hasData) {
+        return;
+    }
+
+    this.saving = true;
+    $(this).trigger("saving");
+
+    $.ajax({
+        type: "POST",
+        url: IDYLL_CONFIG.SERVER + this.url,
+        contentType: "application/json",
+        dataType: "json",
+        data: JSON.stringify({
+            user: TaskManager.user.data.id,
+            token: TaskManager.user.data.authToken,
+            data: toSave
+        }),
+        timeout: 8000,
+
+        complete: function() {
+            this.saving = false;
+        }.bind(this),
+
+        success: function(data) {
+            if (data.error) {
+                this.handleError(data);
+                return;
+            }
+
+            // Remove the saved items from the queue
+            for (var prop in toSave) {
+                delete this.data[prop];
+            }
+
+            this.saveToCache(function() {
+                $(this).trigger("saved", {
+                    saved: toSave,
+                    result: data
+                });
+            }.bind(this));
+        }.bind(this),
+
+        error: function() {
+            this.handleError();
+        }.bind(this)
+    });
 };

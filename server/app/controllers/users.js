@@ -1,30 +1,40 @@
 var mongoose = require("mongoose");
 var User = mongoose.model("User");
 
+var resWithUser = function(res, user) {
+    var data = user.toJSON();
+    data.id = data._id;
+    delete data._id;
+    delete data.__v;
+    res.send(200, data);
+};
+
 exports.connect = function(req, res) {
-    var user = new User({
-        _id: req.body.id,
-        data: req.body.data,
-        service: req.body.service
-    });
+    User.findById(req.body.data.id, function(err, user) {
+        if (user) {
+            return resWithUser(res, user);
+        }
 
-    user.genAuthToken();
+        var user = new User({
+            _id: req.body.data.id,
+            provider: req.body.data.provider,
+            data: req.params.data.data
+        });
 
-    user.save(function(err) {
-        res.send(200);
+        user.genAuthToken();
+
+        user.save(function(err) {
+            resWithUser(res, user);
+        });
     });
 };
 
-exports.auth = function(requiresToken) {
+exports.auth = function() {
     return function(req, res, next) {
         var query = {
-            _id: req.query && req.query.user ||
-                req.body && req.body.user
+            _id: req.params.user,
+            authToken: req.params.token
         };
-
-        if (requiresToken) {
-            query.authToken = req.query.token || req.body.token;
-        }
 
         User.findOne(query).exec(function(err, user) {
             if (err) {

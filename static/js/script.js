@@ -1,9 +1,14 @@
 OAuth.initialize(IDYLL_CONFIG.OAUTHIO_KEY);
 
-var curUser;
+var curUser = TaskManager.user = new User();
 
-// TODO: Check localforage and if user data is saved
-// skip directly to loadJobs
+curUser.loadFromCache(function() {
+    if (curUser.data && curUser.data.id) {
+        loadJobs();
+    } else {
+        $("#login").switchPanel();
+    }
+});
 
 TaskManager.addButton = function(label, callback) {
     $("<button>")
@@ -34,32 +39,23 @@ var renderJobs = function(jobs) {
     );
 };
 
+var handleLogin = function(err) {
+    if (err) {
+        // TODO: Show error message.
+        console.error(err);
+        return;
+    }
+
+    loadJobs();
+};
+
 jQuery.fn.switchPanel = function() {
     this.siblings().addClass("hidden");
     return this.removeClass("hidden");
 };
 
 $(document).on("click", ".login.fb", function() {
-    OAuth.popup("facebook", {cache: true}, function(err, result) {
-        if (err || !result) {
-            // TODO: Handle this.
-            console.error(err);
-            return;
-        }
-
-        result.get({
-            url: "/me",
-            success: function(data) {
-                curUser = data;
-                curUser.provier = "fb";
-                // Save user details in localforage
-                loadJobs();
-            },
-            error: function() {
-                // TODO: Handle this.
-            }
-        })
-    });
+    curUser.auth("facebook", handleLogin);
 });
 
 $(document).on("click", "#jobs a", function() {
@@ -68,8 +64,7 @@ $(document).on("click", "#jobs a", function() {
     TaskManager.init({
         id: this.id,
         type: "image-select",
-        el: $("#module")[0],
-        user: curUser
+        el: $("#module")[0]
     });
 
     return false;
