@@ -18,7 +18,12 @@ var TaskManager = {
         this.results = new Results(options.id);
 
         $(this.results).on({
+            saving: function() {
+                $(this).trigger("saving");
+            }.bind(this),
+
             saved: function(e, data) {
+                $(this).trigger("saved");
                 this.taskQueue.loadData(data.result);
             }.bind(this)
         });
@@ -28,7 +33,10 @@ var TaskManager = {
             this.results.loadFromCache(function() {
                 this.bind();
 
-                this.taskQueue.update(this.nextTask.bind(this));
+                this.taskQueue.update(function() {
+                    this.cacheTasks();
+                    this.nextTask();
+                }.bind(this));
 
                 // Immediately attempt to save any pending results.
                 this.save();
@@ -62,8 +70,28 @@ var TaskManager = {
     },
 
     save: function() {
-        $(this).trigger("saving");
         this.results.save();
+    },
+
+    cacheTasks: function() {
+        var tasks = this.taskQueue.openTasks();
+        var total = tasks.length;
+
+        var cacheTask = function() {
+            var task = tasks.shift();
+            var count = total - tasks.length;
+
+            if (!task) {
+                $(this).trigger("cached");
+                return;
+            }
+
+            $(this).trigger("caching", {cur: count, total: total});
+
+            this.taskQueue.cacheTask(task.id, cacheTask.bind(this));
+        }.bind(this);
+
+        cacheTask();
     },
 
     nextTask: function() {
@@ -113,6 +141,12 @@ var SyncedDataCache = function() {
  */
 
 SyncedDataCache.prototype = {
+    isCached: function(callback) {
+        localforage.getItem(this.cacheKey, function(data) {
+            callback(data !== null);
+        });
+    },
+
     loadFromCache: function(callback) {
         localforage.getItem(this.cacheKey, function(data) {
             this.data = data || this.data;
@@ -329,11 +363,28 @@ TaskQueue.prototype.getTask = function(taskID, callback) {
     }.bind(this));
 };
 
-TaskQueue.prototype.latestTaskID = function() {
-    for (var i = 0; i < this.data.length; i++) {
-        if (!this.data[i].done) {
-            return this.data[i].id;
+TaskQueue.prototype.cacheTask = function(taskID, callback) {
+    var task = new Task(this.jobID, taskID);
+
+    task.isCached(function(cached) {
+        if (cached) {
+            callback();
+        } else {
+            task.update(callback);
         }
+    });
+};
+
+TaskQueue.prototype.openTasks = function() {
+    return this.data.filter(function(task) {
+        return !task.done;
+    });
+};
+
+TaskQueue.prototype.latestTaskID = function() {
+    var openTasks = this.openTasks();
+    if (openTasks.length > 0) {
+        return openTasks[0].id;
     }
 };
 

@@ -49,6 +49,14 @@ var handleLogin = function(err) {
     loadJobs();
 };
 
+var initTaskManager = function(jobID) {
+    TaskManager.init({
+        id: jobID,
+        type: "image-select",
+        el: $("#module")[0]
+    });
+};
+
 jQuery.fn.switchPanel = function() {
     this.siblings().addClass("hidden");
     return this.removeClass("hidden");
@@ -61,16 +69,20 @@ $(document).on("click", ".login.fb", function() {
 $(document).on("click", "#jobs a", function() {
     $("#content").switchPanel();
 
-    TaskManager.init({
-        id: this.id,
-        type: "image-select",
-        el: $("#module")[0]
-    });
+    initTaskManager(this.id);
 
     return false;
 });
 
 $(TaskManager).on({
+    caching: function(e, data) {
+        $("#sync-status").text("Saving file " + data.cur + "/" + data.total);
+    },
+
+    cached: function() {
+        $("#sync-status").text("All files saved.");
+    },
+
     saving: function() {
         $("#online-status").html(window.navigator.onLine ?
             "<span class='glyphicon glyphicon-ok-sign'></span> Online." :
@@ -86,10 +98,8 @@ $(TaskManager).on({
         // TODO: Show some sort of error?
         // Get them to go online and re-sync, if offline.
         $("#sync-status").text("No more tasks! Go online.");
-    }
-});
+    },
 
-$(TaskManager.results).on({
     saving: function() {
         $("#save-status").html(
             "<span class='glyphicon glyphicon-floppy-save'></span> Saving...");
@@ -108,28 +118,4 @@ $(TaskManager.results).on({
 
 $("html").on("touchstart", function(e) {
     e.preventDefault();
-});
-
-$(window.applicationCache).on({
-    updateready: function() {
-        // Get the cache to update
-        this.update();
-        this.swapCache();
-    },
-
-    downloading: function() {
-        $("#sync-status").text("Downloading files...");
-    },
-
-    noupdate: function() {
-        $("#sync-status").text("Cached.");
-    },
-
-    cached: function() {
-        $("#sync-status").text("Cached.");
-    },
-
-    error: function(e) {
-        $("#sync-status").text("Error caching.");
-    }
 });
