@@ -33,12 +33,12 @@
     },
     "installed_plugins": {
         "com.phonegap.plugins.oauthio": {
-            "PACKAGE_NAME": "com.phonegap.helloworld"
+            "PACKAGE_NAME": "com.idyllapp.idyll"
         }
     },
     "dependent_plugins": {
         "org.apache.cordova.inappbrowser": {
-            "PACKAGE_NAME": "com.phonegap.helloworld"
+            "PACKAGE_NAME": "com.idyllapp.idyll"
         }
     }
 }

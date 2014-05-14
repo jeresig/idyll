@@ -2,4 +2,5 @@ server/public/images
 node_modules
 bower_components
 .env
-static/js/config.js
+static/config.js
+app/www/config.js

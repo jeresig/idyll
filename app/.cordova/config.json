@@ -1,9 +1,9 @@
 {
     "lib": {
         "www": {
-            "id": "com.phonegap.helloworld",
+            "id": "com.idyllapp.idyll",
             "version": "3.4.0",
-            "uri": "https://github.com/phonegap/phonegap-app-hello-world/archive/3.4.0.tar.gz"
+            "uri": "https://github.com/jeresig/idyll"
         }
     }
 }

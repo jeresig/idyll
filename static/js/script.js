@@ -1,13 +1,17 @@
-OAuth.initialize(IDYLL_CONFIG.OAUTHIO_KEY);
+$(document).on("deviceready", function() {
+    alert(typeof OAuth)
 
-var curUser = TaskManager.user = new User();
+    OAuth.initialize(IDYLL_CONFIG.OAUTHIO_KEY);
 
-curUser.loadFromCache(function() {
-    if (curUser.data && curUser.data.id) {
-        loadJobs();
-    } else {
-        $("#login").switchPanel();
-    }
+    TaskManager.user = new User();
+
+    TaskManager.user.loadFromCache(function() {
+        if (TaskManager.user.data && TaskManager.user.data.id) {
+            loadJobs();
+        } else {
+            $("#login").switchPanel();
+        }
+    });
 });
 
 TaskManager.addButton = function(label, callback) {
@@ -63,7 +67,7 @@ jQuery.fn.switchPanel = function() {
 };
 
 $(document).on("click", ".login.fb", function() {
-    curUser.auth("facebook", handleLogin);
+    TaskManager.user.auth("facebook", handleLogin);
 });
 
 $(document).on("click", "#jobs a", function() {
