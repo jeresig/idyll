@@ -1,6 +1,4 @@
 $(document).on("deviceready", function() {
-    alert(typeof OAuth)
-
     OAuth.initialize(IDYLL_CONFIG.OAUTHIO_KEY);
 
     TaskManager.user = new User();
@@ -17,7 +15,7 @@ $(document).on("deviceready", function() {
 TaskManager.addButton = function(label, callback) {
     $("<button>")
         .html(label)
-        .on("click", callback)
+        .on("vclick", callback)
         .appendTo("#buttons")
 };
 
@@ -66,11 +64,11 @@ jQuery.fn.switchPanel = function() {
     return this.removeClass("hidden");
 };
 
-$(document).on("click", ".login.fb", function() {
+$(document).on("vclick", ".login.fb", function() {
     TaskManager.user.auth("facebook", handleLogin);
 });
 
-$(document).on("click", "#jobs a", function() {
+$(document).on("vclick", "#jobs a", function() {
     $("#content").switchPanel();
 
     initTaskManager(this.id);

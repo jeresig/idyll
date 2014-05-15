@@ -4,3 +4,4 @@ bower_components
 .env
 static/config.js
 app/www/config.js
+app/platforms
