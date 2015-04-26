@@ -1,4 +1,6 @@
-$(document).on("deviceready", function() {
+var inBrowser = /^http/.test(window.location.href);
+
+$(document).on(inBrowser ? "ready" : "deviceready", function() {
     OAuth.initialize(IDYLL_CONFIG.OAUTHIO_KEY);
 
     TaskManager.user = new User();
