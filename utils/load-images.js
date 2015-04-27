@@ -5,7 +5,6 @@ var async = require("async");
 var glob = require("glob");
 var request = require("request");
 var imageinfo = require("imageinfo");
-var mongoose = require("mongoose");
 var ArgumentParser = require("argparse").ArgumentParser;
 
 var argparser = new ArgumentParser({

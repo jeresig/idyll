@@ -2,9 +2,9 @@ var fs = require("fs");
 
 var restify = require("restify");
 var mongoose = require("mongoose");
-var dotenv = require("dotenv");
 
-dotenv.load();
+// Load in ENV variables
+require("dotenv").load();
 
 mongoose.connect(process.env.MONGO_URL);
 
