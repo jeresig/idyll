@@ -3,10 +3,8 @@ var path = require("path");
 
 var gm = require("gm");
 var async = require("async");
+var mongoose = require("mongoose");
 var ArgumentParser = require("argparse").ArgumentParser;
-
-var ukiyoe = require("../");
-var Image = ukiyoe.db.model("Image");
 
 // ARG PARSER
 var parser = new ArgumentParser({
@@ -35,113 +33,120 @@ var croppedDir = path.resolve(BASE_DATA_DIR, "cropped");
 var images = require(path.resolve(args.cropDataDir, "images.json"));
 var selections = require(path.resolve(args.cropDataDir, "selections.json"));
 
-// Read the two dirs
-ukiyoe.init(function() {
-    var jobs = {};
+// Load models
+var modelsDir = path.resolve(__dirname, "../app/models");
 
-    images.forEach(function(image) {
-        var source = /[^\/]+/.exec(image.scaled.file[0];
+fs.readdirSync(modelsDir).forEach(function (file) {
+    if (~file.indexOf(".js")) {
+        require(modelsDir + "/" + file);
+    }
+});
 
-        if (!(source in jobs)) {
-            jobs[source] = {
-                _id: source + "-crop",
-                creator: "creator",
-                name: source + " crop",
-                type: "image-select"
-            };
-        }
-    });
+var Job = mongoose.model("Job");
+var Result = mongoose.model("Result");
+var Task = mongoose.model("Task");
+var User = mongoose.model("User");
 
-    images = images.filter(function(image) {
-        return image.scaled.file.indexOf(args.source) === 0;
-    });
+var jobs = {};
 
-    async.eachSeries(images, function(image, callback) {
-        var selectionId = image.selections[0].$oid
+images.forEach(function(image) {
+    var source = /[^\/]+/.exec(image.scaled.file[0];
 
-        for (var i = 0; i < selections.length; i++) {
-            if (selections[i]._id.$oid == selectionId) {
-                image.matchedSelection = selections[i].selections[0];
-                break;
-            }
-        }
-
-        if (!image.matchedSelection) {
-            console.error("No selection found.", selectionId);
-            return callback();
-        }
-
-        var gm_img = gm(path.resolve(imagesDir, image.scaled.file));
-
-        gm_img.size(function(err, theSizeObj) {
-            var ratio = theSizeObj.width / image.scaled.width;
-            var x = image.matchedSelection.x * ratio;
-            var y = image.matchedSelection.y * ratio;
-            var width = image.matchedSelection.width * ratio;
-            var height = image.matchedSelection.height * ratio;
-
-            async.series([
-                function(callback) {
-                    var cropped_img_path = path.resolve(croppedDir,
-                        image.scaled.file);
-
-                    fs.exists(cropped_img_path, function(exists) {
-                        if (exists) {
-                            return callback();
-                        }
-
-                        var cropped_img = gm_img.crop(width, height, x, y);
-                        cropped_img.write(cropped_img_path, function() {
-                            console.log("Successfully cropped",
-                                cropped_img_path);
-                            callback();
-                        });
-                    });
-                },
-                function(callback) {
-                    var scaled_img_path = path.resolve(scaledDir,
-                        image.scaled.file);
-
-                    fs.exists(scaled_img_path, function(exists) {
-                        if (exists) {
-                            return callback();
-                        }
-
-                        var scaled = ukiyoe.images.parseSize(
-                            process.env.SCALED_SIZE);
-                        var scaled_img = gm_img.crop(width, height, x, y)
-                            .resize(scaled.width, scaled.height, "^>");
-
-                        scaled_img.write(scaled_img_path, function() {
-                            console.log("Successfully scaled", scaled_img_path);
-                            callback();
-                        });
-                    });
-                },
-                function(callback) {
-                    var thumbs_img_path = path.resolve(thumbsDir,
-                        image.scaled.file);
-
-                    fs.exists(thumbs_img_path, function(exists) {
-                        if (exists) {
-                            return callback();
-                        }
-
-                        var thumb = ukiyoe.images.parseSize(
-                            process.env.THUMB_SIZE);
-                        var thumb_img = gm_img.crop(width, height, x, y)
-                            .resize(thumb.width, thumb.height, ">")
-                            .gravity("Center")
-                            .extent(thumb.width, thumb.height);
-
-                        thumb_img.write(thumbs_img_path, function() {
-                            console.log("Successfully thumbs",
-                                thumbs_img_path);
-                            callback();
-                        });
-                    });
-                }
-            ], callback);
+    if (!(source in jobs)) {
+        jobs[source] = new Job({
+            _id: source + "-crop",
+            creator: "creator",
+            name: source + " crop",
+            type: "image-select"
         });
+    }
+});
+
+async.eachSeries(images, function(image, callback) {
+    var selectionId = image.selections[0].$oid
+
+    for (var i = 0; i < selections.length; i++) {
+        if (selections[i]._id.$oid == selectionId) {
+            image.matchedSelection = selections[i].selections[0];
+            break;
+        }
+    }
+
+    if (!image.matchedSelection) {
+        console.error("No selection found.", selectionId);
+        return callback();
+    }
+
+    var gm_img = gm(path.resolve(imagesDir, image.scaled.file));
+
+    gm_img.size(function(err, theSizeObj) {
+        var ratio = theSizeObj.width / image.scaled.width;
+        var x = image.matchedSelection.x * ratio;
+        var y = image.matchedSelection.y * ratio;
+        var width = image.matchedSelection.width * ratio;
+        var height = image.matchedSelection.height * ratio;
+
+        async.series([
+            function(callback) {
+                var cropped_img_path = path.resolve(croppedDir,
+                    image.scaled.file);
+
+                fs.exists(cropped_img_path, function(exists) {
+                    if (exists) {
+                        return callback();
+                    }
+
+                    var cropped_img = gm_img.crop(width, height, x, y);
+                    cropped_img.write(cropped_img_path, function() {
+                        console.log("Successfully cropped",
+                            cropped_img_path);
+                        callback();
+                    });
+                });
+            },
+            function(callback) {
+                var scaled_img_path = path.resolve(scaledDir,
+                    image.scaled.file);
+
+                fs.exists(scaled_img_path, function(exists) {
+                    if (exists) {
+                        return callback();
+                    }
+
+                    var scaled = ukiyoe.images.parseSize(
+                        process.env.SCALED_SIZE);
+                    var scaled_img = gm_img.crop(width, height, x, y)
+                        .resize(scaled.width, scaled.height, "^>");
+
+                    scaled_img.write(scaled_img_path, function() {
+                        console.log("Successfully scaled", scaled_img_path);
+                        callback();
+                    });
+                });
+            },
+            function(callback) {
+                var thumbs_img_path = path.resolve(thumbsDir,
+                    image.scaled.file);
+
+                fs.exists(thumbs_img_path, function(exists) {
+                    if (exists) {
+                        return callback();
+                    }
+
+                    var thumb = ukiyoe.images.parseSize(
+                        process.env.THUMB_SIZE);
+                    var thumb_img = gm_img.crop(width, height, x, y)
+                        .resize(thumb.width, thumb.height, ">")
+                        .gravity("Center")
+                        .extent(thumb.width, thumb.height);
+
+                    thumb_img.write(thumbs_img_path, function() {
+                        console.log("Successfully thumbs",
+                            thumbs_img_path);
+                        callback();
+                    });
+                });
+            }
+        ], callback);
     });
 });
