@@ -47,22 +47,28 @@ var Result = mongoose.model("Result");
 var Task = mongoose.model("Task");
 var User = mongoose.model("User");
 
+var userID = "creator";
 var jobs = {};
 
-images.forEach(function(image) {
+async.eachSeries(images, function(image, callback) {
     var source = /[^\/]+/.exec(image.scaled.file[0];
 
     if (!(source in jobs)) {
         jobs[source] = new Job({
             _id: source + "-crop",
-            creator: "creator",
+            creator: userID,
             name: source + " crop",
             type: "image-select"
         });
     }
-});
 
-async.eachSeries(images, function(image, callback) {
+    var job = jobs[source];
+
+    var task = new Task({
+        job: job._id,
+        assigned: [userID]
+    });
+
     var selectionId = image.selections[0].$oid
 
     for (var i = 0; i < selections.length; i++) {
