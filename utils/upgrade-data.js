@@ -51,7 +51,9 @@ var userID = "creator";
 var jobs = {};
 
 async.eachSeries(images, function(image, callback) {
-    var source = /[^\/]+/.exec(image.scaled.file[0];
+    var match = /^([^\/]+)\/(.*)$/.exec(image.scaled.file);
+    var source = match[1];
+    var file = match[2];
 
     if (!(source in jobs)) {
         jobs[source] = new Job({
@@ -66,7 +68,16 @@ async.eachSeries(images, function(image, callback) {
 
     var task = new Task({
         job: job._id,
-        assigned: [userID]
+        assigned: [userID],
+        files: [{
+            name: file,
+            type: "image/jpeg",
+            path: "http://data.ukiyo-e.org/" + source + "/images/" + file,
+            data: {
+                width: image.scaled.width,
+                height: image.scaled.height
+            }
+        }]
     });
 
     var selectionId = image.selections[0].$oid
