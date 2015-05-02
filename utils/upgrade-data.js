@@ -1,7 +1,6 @@
 var fs = require("fs");
 var path = require("path");
 
-var gm = require("gm");
 var async = require("async");
 var mongoose = require("mongoose");
 var ArgumentParser = require("argparse").ArgumentParser;
@@ -9,18 +8,12 @@ var ArgumentParser = require("argparse").ArgumentParser;
 // ARG PARSER
 var parser = new ArgumentParser({
     version: "0.0.1",
-    addHelp: true,
-    description: "Argparse example"
+    addHelp: true
 });
 
 parser.addArgument(["cropDataDir"], {
     help: "The directory holding the MongoDB json files from Idyll."
 });
-
-parser.addArgument(["source"], {
-    help: "The name of the source from which the images are coming."
-});
-
 var args = parser.parseArgs();
 
 var BASE_DATA_DIR = path.resolve(process.env.BASE_DATA_DIR, args.source);
@@ -49,6 +42,8 @@ var User = mongoose.model("User");
 
 var userID = "creator";
 var jobs = {};
+var tasks = [];
+var results = [];
 
 async.eachSeries(images, function(image, callback) {
     var match = /^([^\/]+)\/(.*)$/.exec(image.scaled.file);
@@ -68,7 +63,7 @@ async.eachSeries(images, function(image, callback) {
 
     var task = new Task({
         job: job._id,
-        assigned: [userID],
+        assigned: [],
         files: [{
             name: file,
             type: "image/jpeg",
@@ -80,90 +75,59 @@ async.eachSeries(images, function(image, callback) {
         }]
     });
 
-    var selectionId = image.selections[0].$oid
+    var selections = [];
+
+    var selectionIDs = image.selections.map(function(item) {
+        return item.$oid;
+    });
 
     for (var i = 0; i < selections.length; i++) {
-        if (selections[i]._id.$oid == selectionId) {
-            image.matchedSelection = selections[i].selections[0];
-            break;
+        var id = selections[i]._id.$oid;
+
+        if (selectionIDs.indexOf(id) >= 0) {
+            selections.push(selections[i]);
         }
     }
 
-    if (!image.matchedSelection) {
-        console.error("No selection found.", selectionId);
-        return callback();
+    var result;
+
+    if (selections.length > 0) {
+        result = new Result({
+            task: task._id,
+            user: userID,
+            started: selection.started,
+            completed: selection.completed,
+            results: selections.map(function(selection) {
+                return {
+                    height: selection.height,
+                    width: selection.width,
+                    x: selection.x,
+                    y: selection.y
+                };
+            })
+        });
+
+        task.results.push(result._id);
     }
 
-    var gm_img = gm(path.resolve(imagesDir, image.scaled.file));
+    console.log("Saving task:", task._id);
+    //task.save(callback);
+    callback();
+}, function() {
+    console.log("Saving jobs...");
+    async.eachSeries(Object.keys(jobs), function(jobName, callback) {
+        //jobs[jobName].save(callback);
+        callback();
+    }, function() {
+        console.log("Saved.");
+        console.log("Saving results...");
 
-    gm_img.size(function(err, theSizeObj) {
-        var ratio = theSizeObj.width / image.scaled.width;
-        var x = image.matchedSelection.x * ratio;
-        var y = image.matchedSelection.y * ratio;
-        var width = image.matchedSelection.width * ratio;
-        var height = image.matchedSelection.height * ratio;
-
-        async.series([
-            function(callback) {
-                var cropped_img_path = path.resolve(croppedDir,
-                    image.scaled.file);
-
-                fs.exists(cropped_img_path, function(exists) {
-                    if (exists) {
-                        return callback();
-                    }
-
-                    var cropped_img = gm_img.crop(width, height, x, y);
-                    cropped_img.write(cropped_img_path, function() {
-                        console.log("Successfully cropped",
-                            cropped_img_path);
-                        callback();
-                    });
-                });
-            },
-            function(callback) {
-                var scaled_img_path = path.resolve(scaledDir,
-                    image.scaled.file);
-
-                fs.exists(scaled_img_path, function(exists) {
-                    if (exists) {
-                        return callback();
-                    }
-
-                    var scaled = ukiyoe.images.parseSize(
-                        process.env.SCALED_SIZE);
-                    var scaled_img = gm_img.crop(width, height, x, y)
-                        .resize(scaled.width, scaled.height, "^>");
-
-                    scaled_img.write(scaled_img_path, function() {
-                        console.log("Successfully scaled", scaled_img_path);
-                        callback();
-                    });
-                });
-            },
-            function(callback) {
-                var thumbs_img_path = path.resolve(thumbsDir,
-                    image.scaled.file);
-
-                fs.exists(thumbs_img_path, function(exists) {
-                    if (exists) {
-                        return callback();
-                    }
-
-                    var thumb = ukiyoe.images.parseSize(
-                        process.env.THUMB_SIZE);
-                    var thumb_img = gm_img.crop(width, height, x, y)
-                        .resize(thumb.width, thumb.height, ">")
-                        .gravity("Center")
-                        .extent(thumb.width, thumb.height);
-
-                    thumb_img.write(thumbs_img_path, function() {
-                        console.log("Successfully thumbs",
-                            thumbs_img_path);
-                        callback();
-                    });
-                });
-            }
-        ], callback);
+        async.eachSeries(results, function(result, callback) {
+            //result.save(callback);
+            callback();
+        }, function() {
+            console.log("Finished.");
+            process.exit(0);
+        });
     });
 });
