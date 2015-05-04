@@ -4,13 +4,14 @@
   "description": "Mobile, offline, crowd sourcing.",
   "main": "app.js",
   "dependencies": {
-    "mongoose": "~3.8.2",
-    "async": "~0.2.9",
-    "imageinfo": "~1.0.4",
-    "glob": "~3.2.7",
-    "request": "^2.34.0",
-    "dotenv": "^0.2.8",
     "argparse": "^0.1.15",
+    "async": "~0.2.9",
+    "dotenv": "^0.2.8",
+    "glob": "~3.2.7",
+    "gm": "^1.17.0",
+    "imageinfo": "~1.0.4",
+    "mongoose": "~3.8.2",
+    "request": "^2.34.0",
     "restify": "^2.7.0"
   },
   "scripts": {

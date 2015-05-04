@@ -50,8 +50,6 @@ var jobs = {};
 var tasks = [];
 var results = [];
 
-console.log(images.length)
-
 async.eachSeries(images, function(image, callback) {
     var match = /^([^\/]+)\/(.*)$/.exec(image.scaled.file);
     var source = match[1];
