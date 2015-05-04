@@ -36,6 +36,11 @@ parser.addArgument(["--full"], {
     dest: "fullSizeDir"
 });
 
+parser.addArgument(["--square"], {
+    help: "Attempt to square off all of the images, as best as possible.",
+    action: "storeTrue"
+});
+
 parser.addArgument(["outputDir"], {
     help: "The directory to which the new images will be written."
 });
@@ -76,8 +81,75 @@ Task.find({
 
     async.eachSeries(result.results, function(area, callback) {
         pos += 1;
+
+        var size = Math.max(area.width, area.height);
+
+        if (args.square && area.width !== area.height) {
+            var imgArea = task.files[0].data;
+
+            if (area.width < area.height) {
+                // We can't go wider than the image itself
+                if (area.height > imgArea.width) {
+                    area.width = imgArea.width;
+
+                } else {
+                    var lWidth = Math.floor((size - area.width) / 2);
+                    var newX = Math.max(area.x - lWidth, 0);
+
+                    // If it goes off the left side, lock it to the left
+                    if (newX === 0) {
+                        area.x = 0;
+
+                    // If it goes off the right side, lock it to the right
+                    } else if (newX + size > imgArea.width) {
+                        area.x = imgArea.width - size;
+
+                    // Otherwise set the new X
+                    } else {
+                        area.x = newX;
+                    }
+
+                    area.width = size;
+                }
+            } else {
+                // We can't go taller than the image itself
+                if (size > imgArea.height) {
+                    area.height = imgArea.height;
+
+                } else {
+                    var tHeight = Math.floor((size - area.height) / 2);
+                    var newY = Math.max(area.y - tHeight, 0);
+
+                    // If it goes off the top, lock it to the top
+                    if (newY === 0) {
+                        area.y = 0;
+
+                    // If it goes off the bottom, lock it to the bottom
+                    } else if (newY + size > imgArea.height) {
+                        area.y = imgArea.height - size;
+
+                    // Otherwise set the new Y
+                    } else {
+                        area.y = newY;
+                    }
+
+                    area.height = size;
+                }
+            }
+        }
+
+        // Crop and center the image if it's not square
         var cropped = img.crop(area.width, area.height, area.x, area.y);
-        var outFileName = path.basename(fileName, ".jpg") + ".crop." + pos + ".jpg";
+
+        // If the image has been squared, make sure we center the result
+        // (will only happen if the crop is larger than the image in at
+        // least one dimension)
+        if (args.square) {
+            cropped = cropped.gravity("Center").extent(size, size);
+        }
+
+        var outFileName = path.basename(fileName, ".jpg") +
+            ".crop." + pos + ".jpg";
         var outputFile = path.resolve(outputDir, outFileName);
 
         cropped.write(outputFile, function(err) {
