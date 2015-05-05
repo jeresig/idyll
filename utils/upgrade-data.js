@@ -73,7 +73,7 @@ async.eachSeries(images, function(image, callback) {
         files: [{
             name: file,
             type: "image/jpeg",
-            path: "http://data.ukiyo-e.org/" + source + "/images/" + file,
+            path: "http://data.ukiyo-e.org/" + source + "/scaled/" + file,
             data: {
                 width: image.scaled.width,
                 height: image.scaled.height
