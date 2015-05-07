@@ -37,7 +37,8 @@ var renderJobs = function(jobs) {
         jobs.data.map(function(job) {
             return "<div class='job'>" +
                 "<a href='' id='" + job.id + "'>" + job.name + "</a>" +
-                "<p class='desc'>" + job.description + "</p>" +
+                (job.description ?
+                    "<p class='desc'>" + job.description + "</p>" : "") +
             "</job>";
         }).join("")
     );
