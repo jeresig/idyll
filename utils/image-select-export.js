@@ -76,93 +76,117 @@ Task.find({
     }
 
     var fileName = task.files[0].name;
-    var img = gm(path.resolve(imagesDir, fileName));
+    var filePath = path.resolve(imagesDir, fileName);
+
+    if (args.fullSizeDir) {
+        filePath = path.resolve(args.fullSizeDir, fileName);
+    }
+
+    var img = gm(filePath);
     var pos = 0;
 
-    async.eachSeries(result.results, function(area, callback) {
-        pos += 1;
+    img.size(function(err, val) {
+        var parts = val.split("x");
 
-        var size = Math.max(area.width, area.height);
+        var imgArea = {
+            width: parseFloat(parts[0]),
+            height: parseFlot(parts[1])
+        };
 
-        if (args.square && area.width !== area.height) {
-            var imgArea = task.files[0].data;
+        async.eachSeries(result.results, function(area, callback) {
+            pos += 1;
 
-            if (area.width < area.height) {
-                // We can't go wider than the image itself
-                if (area.height > imgArea.width) {
-                    area.width = imgArea.width;
+            // Scale the width/height/x/y if we're working against the
+            // full-size image instead of the scaled one
+            if (args.fullSizeDir) {
+                var scaledWidth = task.files[0].data.width;
+                var ratio = scaledWidth / imgArea.width;
+                area.width = Math.round(area.width * ratio);
+                area.height = Math.round(area.height * ratio);
+                area.x = Math.round(area.x * ratio);
+                area.y = Math.round(area.y * ratio);
+            }
 
-                } else {
-                    var lWidth = Math.floor((size - area.width) / 2);
-                    var newX = Math.max(area.x - lWidth, 0);
+            var size = Math.max(area.width, area.height);
 
-                    // If it goes off the left side, lock it to the left
-                    if (newX === 0) {
-                        area.x = 0;
+            if (args.square && area.width !== area.height) {
+                if (area.width < area.height) {
+                    // We can't go wider than the image itself
+                    if (area.height > imgArea.width) {
+                        area.width = imgArea.width;
 
-                    // If it goes off the right side, lock it to the right
-                    } else if (newX + size > imgArea.width) {
-                        area.x = imgArea.width - size;
-
-                    // Otherwise set the new X
                     } else {
-                        area.x = newX;
+                        var lWidth = Math.floor((size - area.width) / 2);
+                        var newX = Math.max(area.x - lWidth, 0);
+
+                        // If it goes off the left side, lock it to the left
+                        if (newX === 0) {
+                            area.x = 0;
+
+                        // If it goes off the right side, lock it to the right
+                        } else if (newX + size > imgArea.width) {
+                            area.x = imgArea.width - size;
+
+                        // Otherwise set the new X
+                        } else {
+                            area.x = newX;
+                        }
+
+                        area.width = size;
                     }
-
-                    area.width = size;
-                }
-            } else {
-                // We can't go taller than the image itself
-                if (size > imgArea.height) {
-                    area.height = imgArea.height;
-
                 } else {
-                    var tHeight = Math.floor((size - area.height) / 2);
-                    var newY = Math.max(area.y - tHeight, 0);
+                    // We can't go taller than the image itself
+                    if (size > imgArea.height) {
+                        area.height = imgArea.height;
 
-                    // If it goes off the top, lock it to the top
-                    if (newY === 0) {
-                        area.y = 0;
-
-                    // If it goes off the bottom, lock it to the bottom
-                    } else if (newY + size > imgArea.height) {
-                        area.y = imgArea.height - size;
-
-                    // Otherwise set the new Y
                     } else {
-                        area.y = newY;
-                    }
+                        var tHeight = Math.floor((size - area.height) / 2);
+                        var newY = Math.max(area.y - tHeight, 0);
 
-                    area.height = size;
+                        // If it goes off the top, lock it to the top
+                        if (newY === 0) {
+                            area.y = 0;
+
+                        // If it goes off the bottom, lock it to the bottom
+                        } else if (newY + size > imgArea.height) {
+                            area.y = imgArea.height - size;
+
+                        // Otherwise set the new Y
+                        } else {
+                            area.y = newY;
+                        }
+
+                        area.height = size;
+                    }
                 }
             }
-        }
 
-        // Crop and center the image if it's not square
-        var cropped = img.crop(area.width, area.height, area.x, area.y);
+            // Crop and center the image if it's not square
+            var cropped = img.crop(area.width, area.height, area.x, area.y);
 
-        // If the image has been squared, make sure we center the result
-        // (will only happen if the crop is larger than the image in at
-        // least one dimension)
-        if (args.square) {
-            cropped = cropped.gravity("Center").extent(size, size);
-        }
-
-        var outFileName = path.basename(fileName, ".jpg") +
-            ".crop." + pos + ".jpg";
-        var outputFile = path.resolve(outputDir, outFileName);
-
-        cropped.write(outputFile, function(err) {
-            if (err) {
-                console.error(err);
+            // If the image has been squared, make sure we center the result
+            // (will only happen if the crop is larger than the image in at
+            // least one dimension)
+            if (args.square) {
+                cropped = cropped.gravity("Center").extent(size, size);
             }
-            console.log("Cropped", outFileName);
-            callback();
-        });
-    }, function() {
-        console.log("Finished:", fileName);
-        this.resume();
-    }.bind(this))
+
+            var outFileName = path.basename(fileName, ".jpg") +
+                ".crop." + pos + ".jpg";
+            var outputFile = path.resolve(outputDir, outFileName);
+
+            cropped.write(outputFile, function(err) {
+                if (err) {
+                    console.error(err);
+                }
+                console.log("Cropped", outFileName);
+                callback();
+            });
+        }, function() {
+            console.log("Finished:", fileName);
+            this.resume();
+        }.bind(this));
+    });
 })
 .on("error", function() {
     
@@ -171,94 +195,3 @@ Task.find({
     console.log("DONE");
     process.exit(0);
 });
-
-/*
-async.eachSeries(images, function(image, callback) {
-    var selectionId = image.selections[0].$oid
-
-    for (var i = 0; i < selections.length; i++) {
-        if (selections[i]._id.$oid == selectionId) {
-            image.matchedSelection = selections[i].selections[0];
-            break;
-        }
-    }
-
-    if (!image.matchedSelection) {
-        console.error("No selection found.", selectionId);
-        return callback();
-    }
-
-    var gm_img = gm(path.resolve(imagesDir, image.scaled.file));
-
-    gm_img.size(function(err, theSizeObj) {
-        var ratio = theSizeObj.width / image.scaled.width;
-        var x = image.matchedSelection.x * ratio;
-        var y = image.matchedSelection.y * ratio;
-        var width = image.matchedSelection.width * ratio;
-        var height = image.matchedSelection.height * ratio;
-
-        async.series([
-            function(callback) {
-                var cropped_img_path = path.resolve(croppedDir,
-                    image.scaled.file);
-
-                fs.exists(cropped_img_path, function(exists) {
-                    if (exists) {
-                        return callback();
-                    }
-
-                    var cropped_img = gm_img.crop(width, height, x, y);
-                    cropped_img.write(cropped_img_path, function() {
-                        console.log("Successfully cropped",
-                            cropped_img_path);
-                        callback();
-                    });
-                });
-            },
-            function(callback) {
-                var scaled_img_path = path.resolve(scaledDir,
-                    image.scaled.file);
-
-                fs.exists(scaled_img_path, function(exists) {
-                    if (exists) {
-                        return callback();
-                    }
-
-                    var scaled = ukiyoe.images.parseSize(
-                        process.env.SCALED_SIZE);
-                    var scaled_img = gm_img.crop(width, height, x, y)
-                        .resize(scaled.width, scaled.height, "^>");
-
-                    scaled_img.write(scaled_img_path, function() {
-                        console.log("Successfully scaled", scaled_img_path);
-                        callback();
-                    });
-                });
-            },
-            function(callback) {
-                var thumbs_img_path = path.resolve(thumbsDir,
-                    image.scaled.file);
-
-                fs.exists(thumbs_img_path, function(exists) {
-                    if (exists) {
-                        return callback();
-                    }
-
-                    var thumb = ukiyoe.images.parseSize(
-                        process.env.THUMB_SIZE);
-                    var thumb_img = gm_img.crop(width, height, x, y)
-                        .resize(thumb.width, thumb.height, ">")
-                        .gravity("Center")
-                        .extent(thumb.width, thumb.height);
-
-                    thumb_img.write(thumbs_img_path, function() {
-                        console.log("Successfully thumbs",
-                            thumbs_img_path);
-                        callback();
-                    });
-                });
-            }
-        ], callback);
-    });
-});
-*/
