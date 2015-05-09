@@ -41,6 +41,11 @@ parser.addArgument(["--square"], {
     action: "storeTrue"
 });
 
+parser.addArgument(["--crop"], {
+    help: "Create a single cropped version of the image.",
+    action: "storeTrue"
+});
+
 parser.addArgument(["outputDir"], {
     help: "The directory to which the new images will be written."
 });
@@ -172,7 +177,7 @@ Task.find({
             }
 
             var outFileName = path.basename(fileName, ".jpg") +
-                ".crop." + pos + ".jpg";
+                ".crop" + (args.crop ? "" : "." + pos) + ".jpg";
             var outputFile = path.resolve(outputDir, outFileName);
 
             cropped.write(outputFile, function(err) {
