@@ -15,6 +15,9 @@ var TaskSchema = new Schema({
     // The results of the user actions against the data
     results: [{type: ObjectId, ref: "Result"}],
 
+    // Track if the job is completed
+    completed: Boolean,
+
     // Any data (to be passed to the client) to help the user
     data: Schema.Types.Mixed,
 

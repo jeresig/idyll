@@ -24,6 +24,9 @@ var JobSchema = new Schema({
     // When the job ended (if set, job is no longer active)
     ended: Date,
 
+    // Track if the job is completed
+    completed: Boolean,
+
     api: {
         // API endpoint for getting an array of IDs for the user
         // to complete.
