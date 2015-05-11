@@ -46,6 +46,11 @@ parser.addArgument(["--crop"], {
     action: "storeTrue"
 });
 
+parser.addArgument(["--negative"], {
+    help: "Generate a number of negative crops for each image (if possible).",
+    action: "storeConst"
+});
+
 parser.addArgument(["outputDir"], {
     help: "The directory to which the new images will be written."
 });
@@ -90,6 +95,30 @@ Task.find({
     var img = gm(filePath);
     var pos = 0;
 
+    var crop = function(area, callback) {
+        // Crop and center the image if it's not square
+        var cropped = img.crop(area.width, area.height, area.x, area.y);
+
+        // If the image has been squared, make sure we center the result
+        // (will only happen if the crop is larger than the image in at
+        // least one dimension)
+        if (args.square) {
+            cropped = cropped.gravity("Center").extent(size, size);
+        }
+
+        var outFileName = path.basename(fileName, ".jpg") +
+            ".crop" + (args.crop ? "" : "." + pos) + ".jpg";
+        var outputFile = path.resolve(outputDir, outFileName);
+
+        cropped.write(outputFile, function(err) {
+            if (err) {
+                console.error(err);
+            }
+            console.log("Cropped", outFileName);
+            callback();
+        });
+    };
+
     img.size(function(err, val) {
         var parts = val.split("x");
 
@@ -97,6 +126,8 @@ Task.find({
             width: parseFloat(parts[0]),
             height: parseFlot(parts[1])
         };
+
+        var matches = [];
 
         async.eachSeries(result.results, function(area, callback) {
             pos += 1;
@@ -166,30 +197,41 @@ Task.find({
                 }
             }
 
-            // Crop and center the image if it's not square
-            var cropped = img.crop(area.width, area.height, area.x, area.y);
+            matches.push(area);
 
-            // If the image has been squared, make sure we center the result
-            // (will only happen if the crop is larger than the image in at
-            // least one dimension)
-            if (args.square) {
-                cropped = cropped.gravity("Center").extent(size, size);
+            crop(area, callback);
+        }, function() {
+            if (!args.negative) {
+                console.log("Finished:", fileName);
+                this.resume();
             }
 
-            var outFileName = path.basename(fileName, ".jpg") +
-                ".crop" + (args.crop ? "" : "." + pos) + ".jpg";
-            var outputFile = path.resolve(outputDir, outFileName);
+            var negMatches = [];
+            var desired = parseFloat(args.negative);
+            var minSize = 20;
+            var attempts = 0;
+            var maxAttempts = 1000;
 
-            cropped.write(outputFile, function(err) {
-                if (err) {
-                    console.error(err);
-                }
-                console.log("Cropped", outFileName);
-                callback();
-            });
-        }, function() {
-            console.log("Finished:", fileName);
-            this.resume();
+            while (attempts < maxAttempts && negMatches.length < desired) {
+                var width = Math.round(Math.min(imgArea.width,
+                    minSize + (Math.random() * 100)));
+                var height = Math.round(Math.min(imgArea.height,
+                    minSize + (Math.random() * 100)));
+                var match = {
+                    x: Math.round(Math.random() * (imgArea.width - width)),
+                    y: Math.round(Math.random() * (imgArea.height - height)),
+                    width: width,
+                    height: height
+                };
+
+                // TODO: Check for overlap with other matches
+                negMatches.push(match);
+            }
+
+            async.eachSeries(negMatches, crop, function() {
+                console.log("Finished:", fileName);
+                this.resume();
+            }.bind(this));
         }.bind(this));
     });
 })
