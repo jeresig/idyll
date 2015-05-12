@@ -68,6 +68,18 @@ var args = parser.parseArgs();
 var imagesDir = path.resolve(args.imagesDir);
 var outputDir = path.resolve(args.outputDir);
 
+var areaOverlap = function(area1, area2) {
+    if (area1.x > area2.x + area2.width || area2.x > area1.x + area1.width) {
+        return false;
+    }
+
+    if (area1.y < area2.y + area2.height || area2.y < area1.y + area1.height) {
+        return false;
+    }
+
+    return true;
+};
+
 Task.find({
     job: args.jobName,
     // Equivalent to $size > 0
@@ -213,10 +225,12 @@ Task.find({
             var maxAttempts = 1000;
 
             while (attempts < maxAttempts && negMatches.length < desired) {
-                var width = Math.round(Math.min(imgArea.width,
-                    minSize + (Math.random() * 100)));
-                var height = Math.round(Math.min(imgArea.height,
-                    minSize + (Math.random() * 100)));
+                // Copy the width/height of another match, rather than attempt
+                // to guess some useful dimensions
+                var copyMatch = matches[Math.floor(Math.random() * matches.length)];
+                var width = copyMatch.width;
+                var height = copyMatch.height;
+
                 var match = {
                     x: Math.round(Math.random() * (imgArea.width - width)),
                     y: Math.round(Math.random() * (imgArea.height - height)),
