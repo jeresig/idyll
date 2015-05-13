@@ -238,8 +238,19 @@ Task.find({
                     height: height
                 };
 
-                // TODO: Check for overlap with other matches
-                negMatches.push(match);
+                // Check for overlap with other matches
+                var overlaps = false;
+
+                for (var i = 0; i < matches.length; i++) {
+                    // TODO: Handle partial overlaps
+                    if (areaOverlap(matches[i], match)) {
+                        overlaps = true;
+                    }
+                }
+
+                if (!overlaps) {
+                    negMatches.push(match);
+                }
             }
 
             async.eachSeries(negMatches, crop, function() {
