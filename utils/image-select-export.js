@@ -73,7 +73,7 @@ var areaOverlap = function(area1, area2) {
         return false;
     }
 
-    if (area1.y < area2.y + area2.height || area2.y < area1.y + area1.height) {
+    if (area1.y > area2.y + area2.height || area2.y > area1.y + area1.height) {
         return false;
     }
 
