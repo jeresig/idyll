@@ -48,7 +48,7 @@ parser.addArgument(["--crop"], {
 
 parser.addArgument(["--negative"], {
     help: "Generate a number of negative crops for each image (if possible).",
-    action: "storeConst"
+    action: "store"
 });
 
 parser.addArgument(["outputDir"], {
@@ -107,7 +107,7 @@ Task.find({
     var img = gm(filePath);
     var pos = 0;
 
-    var crop = function(area, callback) {
+    var crop = function(area, suffix, callback) {
         // Crop and center the image if it's not square
         var cropped = img.crop(area.width, area.height, area.x, area.y);
 
@@ -115,11 +115,12 @@ Task.find({
         // (will only happen if the crop is larger than the image in at
         // least one dimension)
         if (args.square) {
+            var size = Math.max(area.width, area.height);
             cropped = cropped.gravity("Center").extent(size, size);
         }
 
         var outFileName = path.basename(fileName, ".jpg") +
-            ".crop" + (args.crop ? "" : "." + pos) + ".jpg";
+            suffix + ".jpg";
         var outputFile = path.resolve(outputDir, outFileName);
 
         cropped.write(outputFile, function(err) {
@@ -131,14 +132,7 @@ Task.find({
         });
     };
 
-    img.size(function(err, val) {
-        var parts = val.split("x");
-
-        var imgArea = {
-            width: parseFloat(parts[0]),
-            height: parseFlot(parts[1])
-        };
-
+    img.size(function(err, imgArea) {
         var matches = [];
 
         async.eachSeries(result.results, function(area, callback) {
@@ -211,7 +205,7 @@ Task.find({
 
             matches.push(area);
 
-            crop(area, callback);
+            crop(area, ".crop" + (args.crop ? "" : "." + pos), callback);
         }, function() {
             if (!args.negative) {
                 console.log("Finished:", fileName);
@@ -227,7 +221,8 @@ Task.find({
             while (attempts < maxAttempts && negMatches.length < desired) {
                 // Copy the width/height of another match, rather than attempt
                 // to guess some useful dimensions
-                var copyMatch = matches[Math.floor(Math.random() * matches.length)];
+                var copyMatch = matches[
+                    Math.floor(Math.random() * matches.length)];
                 var width = copyMatch.width;
                 var height = copyMatch.height;
 
@@ -253,15 +248,17 @@ Task.find({
                 }
             }
 
-            async.eachSeries(negMatches, crop, function() {
+            var pos = 0;
+
+            async.eachSeries(negMatches, function(file, callback) {
+                pos += 1;
+                crop(file, ".negative." + pos, callback);
+            }, function() {
                 console.log("Finished:", fileName);
                 this.resume();
             }.bind(this));
         }.bind(this));
-    });
-})
-.on("error", function() {
-    
+    }.bind(this));
 })
 .on("close", function() {
     console.log("DONE");
