@@ -42,6 +42,11 @@ parser.addArgument(["--square"], {
     action: "storeTrue"
 });
 
+parser.addArgument(["--forceSquare"], {
+    help: "Only output truly square images.",
+    action: "storeTrue"
+});
+
 parser.addArgument(["--crop"], {
     help: "Create a single cropped version of the image.",
     action: "storeTrue"
@@ -127,7 +132,7 @@ Task.find({
         // If the image has been squared, make sure we center the result
         // (will only happen if the crop is larger than the image in at
         // least one dimension)
-        if (args.square) {
+        if (args.forceSquare) {
             var size = Math.max(area.width, area.height);
             cropped = cropped.gravity("Center").extent(size, size);
         }
@@ -221,8 +226,10 @@ Task.find({
             if (args.negative) {
                 process.nextTick(callback);
             } else if (args.outputFile) {
-                outputRows.push([filePath, area.x, area.x, area.width,
-                    area.height, 0, 0, 0]);
+                if (!args.forceSquare || area.width === area.height) {
+                    outputRows.push([fileName, area.x, area.y, area.width,
+                        area.height, 0, 0, 0]);
+                }
                 process.nextTick(callback);
             } else {
                 crop(area, ".crop" + (args.crop ? "" : "." + pos), callback);
