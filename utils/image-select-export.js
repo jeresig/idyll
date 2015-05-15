@@ -2,6 +2,7 @@ var fs = require("fs");
 var path = require("path");
 
 var gm = require("gm");
+var csv = require("csv");
 var async = require("async");
 var mongoose = require("mongoose");
 var ArgumentParser = require("argparse").ArgumentParser;
@@ -51,8 +52,14 @@ parser.addArgument(["--negative"], {
     action: "store"
 });
 
-parser.addArgument(["outputDir"], {
-    help: "The directory to which the new images will be written."
+parser.addArgument(["--outputDir"], {
+    help: "The directory to which the new images will be written.",
+    action: "store"
+});
+
+parser.addArgument(["--outputFile"], {
+    help: "The file to which a TSV of the regions will be output, in AFLW format.",
+    action: "store"
 });
 
 parser.addArgument(["imagesDir"], {
@@ -65,8 +72,14 @@ parser.addArgument(["jobName"], {
 
 var args = parser.parseArgs();
 
+if (!args.outputFile && !args.outputDir) {
+    console.error("You must specify either an outputFile or an outputDir.");
+    process.exit(0);
+}
+
 var imagesDir = path.resolve(args.imagesDir);
-var outputDir = path.resolve(args.outputDir);
+
+var outputRows = [];
 
 var areaOverlap = function(area1, area2) {
     if (area1.x > area2.x + area2.width || area2.x > area1.x + area1.width) {
@@ -121,7 +134,7 @@ Task.find({
 
         var outFileName = path.basename(fileName, ".jpg") +
             suffix + ".jpg";
-        var outputFile = path.resolve(outputDir, outFileName);
+        var outputFile = path.resolve(args.outputDir, outFileName);
 
         cropped.write(outputFile, function(err) {
             if (err) {
@@ -205,7 +218,15 @@ Task.find({
 
             matches.push(area);
 
-            crop(area, ".crop" + (args.crop ? "" : "." + pos), callback);
+            if (args.negative) {
+                process.nextTick(callback);
+            } else if (args.outputFile) {
+                outputRows.push([filePath, area.x, area.x, area.width,
+                    area.height, 0, 0, 0]);
+                process.nextTick(callback);
+            } else {
+                crop(area, ".crop" + (args.crop ? "" : "." + pos), callback);
+            }
         }, function() {
             if (!args.negative) {
                 console.log("Finished:", fileName);
@@ -263,6 +284,17 @@ Task.find({
     }.bind(this));
 })
 .on("close", function() {
-    console.log("DONE");
-    process.exit(0);
+    if (!args.outputFile) {
+        console.log("DONE");
+        process.exit(0);
+    }
+
+    console.log("Writing out TSV file...");
+
+    csv.stringify(outputRows, {delimiter: "\t"})
+        .pipe(fs.createWriteStream(path.resolve(args.outputFile)))
+        .on("close", function() {
+            console.log("DONE");
+            process.exit(0);
+        });
 });
