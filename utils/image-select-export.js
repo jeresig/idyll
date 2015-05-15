@@ -246,6 +246,8 @@ Task.find({
                 if (!overlaps) {
                     negMatches.push(match);
                 }
+
+                attempts += 1;
             }
 
             var pos = 0;
