@@ -57,6 +57,12 @@ parser.addArgument(["--negative"], {
     action: "store"
 });
 
+parser.addArgument(["--replace-matches"], {
+    help: "Replace all matches with negative matches (if possible).",
+    dest: "replaceMatches",
+    action: "storeTrue"
+});
+
 parser.addArgument(["--outputDir"], {
     help: "The directory to which the new images will be written.",
     action: "store"
