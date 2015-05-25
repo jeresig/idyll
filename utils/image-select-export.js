@@ -104,6 +104,39 @@ var areaOverlap = function(area1, area2) {
     return true;
 };
 
+var findNegative = function(copyMatch) {
+    var minSize = 20;
+    var attempts = 0;
+    var maxAttempts = 1000;
+    var width = copyMatch.width;
+    var height = copyMatch.height;
+
+    while (attempts < maxAttempts) {
+        var match = {
+            x: Math.round(Math.random() * (imgArea.width - width)),
+            y: Math.round(Math.random() * (imgArea.height - height)),
+            width: width,
+            height: height
+        };
+
+        // Check for overlap with other matches
+        var overlaps = false;
+
+        for (var i = 0; i < matches.length; i++) {
+            // TODO: Handle partial overlaps
+            if (areaOverlap(matches[i], match)) {
+                overlaps = true;
+            }
+        }
+
+        if (!overlaps) {
+            return match;
+        }
+
+        attempts += 1;
+    }
+};
+
 Task.find({
     job: args.jobName,
     // Equivalent to $size > 0
@@ -248,40 +281,20 @@ Task.find({
 
             var negMatches = [];
             var desired = parseFloat(args.negative);
-            var minSize = 20;
-            var attempts = 0;
-            var maxAttempts = 1000;
 
-            while (attempts < maxAttempts && negMatches.length < desired) {
+            while (negMatches.length < desired) {
                 // Copy the width/height of another match, rather than attempt
                 // to guess some useful dimensions
                 var copyMatch = matches[
                     Math.floor(Math.random() * matches.length)];
-                var width = copyMatch.width;
-                var height = copyMatch.height;
 
-                var match = {
-                    x: Math.round(Math.random() * (imgArea.width - width)),
-                    y: Math.round(Math.random() * (imgArea.height - height)),
-                    width: width,
-                    height: height
-                };
+                var match = findNegative(copyMatch);
 
-                // Check for overlap with other matches
-                var overlaps = false;
-
-                for (var i = 0; i < matches.length; i++) {
-                    // TODO: Handle partial overlaps
-                    if (areaOverlap(matches[i], match)) {
-                        overlaps = true;
-                    }
-                }
-
-                if (!overlaps) {
+                if (match) {
                     negMatches.push(match);
+                } else {
+                    break;
                 }
-
-                attempts += 1;
             }
 
             var pos = 0;
