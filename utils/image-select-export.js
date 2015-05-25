@@ -53,8 +53,8 @@ parser.addArgument(["--crop"], {
 });
 
 parser.addArgument(["--negative"], {
-    help: "Generate a number of negative crops for each image (if possible).",
-    action: "store"
+    help: "Generate negative crops for each image (if possible).",
+    action: "storeTrue"
 });
 
 parser.addArgument(["--replace-matches"], {
@@ -88,6 +88,14 @@ if (!args.outputFile && !args.outputDir) {
     process.exit(0);
 }
 
+if (args.forceSquare) {
+    args.square = true;
+}
+
+if (args.replaceMatches) {
+    args.negative = true;
+}
+
 var imagesDir = path.resolve(args.imagesDir);
 
 var outputRows = [];
@@ -104,7 +112,7 @@ var areaOverlap = function(area1, area2) {
     return true;
 };
 
-var findNegative = function(copyMatch) {
+var findNegative = function(copyMatch, matches, imgArea) {
     var minSize = 20;
     var attempts = 0;
     var maxAttempts = 1000;
@@ -164,6 +172,13 @@ Task.find({
     var img = gm(filePath);
     var pos = 0;
 
+    var getFileName = function(suffix) {
+        suffix = suffix || "";
+        var outFileName = path.basename(fileName, ".jpg") +
+            suffix + ".jpg";
+        return path.resolve(args.outputDir, outFileName);
+    };
+
     var crop = function(area, suffix, callback) {
         // Crop and center the image if it's not square
         var cropped = img.crop(area.width, area.height, area.x, area.y);
@@ -176,15 +191,13 @@ Task.find({
             cropped = cropped.gravity("Center").extent(size, size);
         }
 
-        var outFileName = path.basename(fileName, ".jpg") +
-            suffix + ".jpg";
-        var outputFile = path.resolve(args.outputDir, outFileName);
+        var outFileName = getFileName(suffix);
 
-        cropped.write(outputFile, function(err) {
+        cropped.write(outFileName, function(err) {
             if (err) {
                 console.error(err);
             }
-            console.log("Cropped", outFileName);
+            console.log("Cropped", path.basename(outFileName));
             callback();
         });
     };
@@ -276,25 +289,28 @@ Task.find({
         }, function() {
             if (!args.negative) {
                 console.log("Finished:", fileName);
-                this.resume();
+                return this.resume();
             }
 
+            var failure = false;
             var negMatches = [];
-            var desired = parseFloat(args.negative);
 
-            while (negMatches.length < desired) {
+            for (var i = 0; i < matches.length; i++) {
                 // Copy the width/height of another match, rather than attempt
                 // to guess some useful dimensions
-                var copyMatch = matches[
-                    Math.floor(Math.random() * matches.length)];
-
-                var match = findNegative(copyMatch);
+                var copyMatch = matches[i];
+                var match = findNegative(copyMatch, matches, imgArea);
 
                 if (match) {
                     negMatches.push(match);
                 } else {
+                    failure = true;
                     break;
                 }
+            }
+
+            if (failure) {
+                return this.resume();
             }
 
             var pos = 0;
@@ -303,8 +319,25 @@ Task.find({
                 pos += 1;
                 crop(file, ".negative." + pos, callback);
             }, function() {
-                console.log("Finished:", fileName);
-                this.resume();
+                if (!args.replaceMatches) {
+                    console.log("Finished:", fileName);
+                    this.resume();
+                }
+
+                var newImg = img;
+
+                for (var i = 0; i < matches.length; i++) {
+                    var match = matches[i];
+
+                    newImg = newImg.draw(
+                        "image over " + match.x + "," + match.y +
+                        " 0,0 '" + getFileName(".negative." + (i + 1)) + "'");
+                }
+
+                newImg.write(getFileName(".negative"), function() {
+                    console.log("Finished:", fileName);
+                    this.resume();
+                }.bind(this));
             }.bind(this));
         }.bind(this));
     }.bind(this));
