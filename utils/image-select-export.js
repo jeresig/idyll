@@ -42,6 +42,11 @@ parser.addArgument(["--square"], {
     action: "storeTrue"
 });
 
+parser.addArgument(["--smallSquare"], {
+    help: "Output small squares rather than the full size.",
+    action: "storeTrue"
+});
+
 parser.addArgument(["--forceSquare"], {
     help: "Only output truly square images.",
     action: "storeTrue"
@@ -88,7 +93,7 @@ if (!args.outputFile && !args.outputDir) {
     process.exit(0);
 }
 
-if (args.forceSquare) {
+if (args.forceSquare || args.smallSquare) {
     args.square = true;
 }
 
@@ -221,8 +226,13 @@ Task.find({
 
             var size = Math.max(area.width, area.height);
 
+            if (args.smallSquare) {
+                size = Math.min(area.width, area.height);
+            }
+
             if (args.square && area.width !== area.height) {
-                if (area.width < area.height) {
+                if (args.smallSquare && area.width > area.height ||
+                    !args.smallSquare && area.width < area.height) {
                     // We can't go wider than the image itself
                     if (area.height > imgArea.width) {
                         area.width = imgArea.width;
