@@ -42,13 +42,15 @@ parser.addArgument(["--square"], {
     action: "storeTrue"
 });
 
-parser.addArgument(["--smallSquare"], {
+parser.addArgument(["--small-square"], {
     help: "Output small squares rather than the full size.",
+    dest: "smallSquare",
     action: "storeTrue"
 });
 
-parser.addArgument(["--forceSquare"], {
+parser.addArgument(["--force-square"], {
     help: "Only output truly square images.",
+    dest: "forceSquare",
     action: "storeTrue"
 });
 
@@ -68,22 +70,26 @@ parser.addArgument(["--replace-matches"], {
     action: "storeTrue"
 });
 
-parser.addArgument(["--outputDir"], {
+parser.addArgument(["--output-dir"], {
     help: "The directory to which the new images will be written.",
+    dest: "outputDir",
     action: "store"
 });
 
-parser.addArgument(["--outputFile"], {
+parser.addArgument(["--output-file"], {
     help: "The file to which a TSV of the regions will be output, in AFLW format.",
+    dest: "outputFile",
     action: "store"
 });
 
-parser.addArgument(["imagesDir"], {
-    help: "The directory holding the images that'll be used as a data source."
+parser.addArgument(["images-dir"], {
+    help: "The directory holding the images that'll be used as a data source.",
+    dest: "imagesDir"
 });
 
-parser.addArgument(["jobName"], {
-    help: "The name of the job from which to pull the images."
+parser.addArgument(["job-name"], {
+    help: "The name of the job from which to pull the images.",
+    dest: "jobName"
 });
 
 var args = parser.parseArgs();
